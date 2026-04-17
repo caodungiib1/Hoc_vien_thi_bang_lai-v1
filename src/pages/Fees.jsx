@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { collectFee, getFeeOverview, getFeeRecords, getPaymentHistory } from '../services/feeService';
 import { getStudents } from '../services/studentService';
 import { exportXlsx } from '../services/exportService';
@@ -351,9 +352,6 @@ const Fees = () => {
           <button className="secondary-button" type="button" onClick={handleExportFees}>
             ↓ Xuất Excel
           </button>
-          <button className="btn-primary" type="button" onClick={() => openCollect()}>
-            💰 Ghi nhận thu tiền
-          </button>
         </div>
       </div>
 
@@ -378,13 +376,6 @@ const Fees = () => {
                   <strong>{r.name}</strong>
                   <span style={{ color: '#ef4444', marginLeft: '6px' }}>— {fmt(r.debt)}</span>
                   <span style={{ color: 'var(--text-muted)', marginLeft: '6px' }}>hạn: {r.dueDate}</span>
-                  <button
-                    className="secondary-button compact"
-                    style={{ marginLeft: '8px', fontSize: '0.7rem', padding: '2px 6px' }}
-                    onClick={() => openCollect(r)}
-                  >
-                    Thu tiền
-                  </button>
                 </div>
               ))}
             </div>
@@ -443,7 +434,7 @@ const Fees = () => {
               <tr>
                 <th>HỌ VÀ TÊN</th><th>SỐ ĐIỆN THOẠI</th><th>HẠNG BẰNG</th>
                 <th>TỔNG HỌC PHÍ</th><th>ĐÃ ĐÓNG</th><th>CÒN NỢ</th>
-                <th>HẠN NỘP</th><th>TRẠNG THÁI</th><th>HÀNH ĐỘNG</th>
+                <th>HẠN NỘP</th><th>TRẠNG THÁI</th>
               </tr>
             </thead>
             <tbody>
@@ -453,7 +444,11 @@ const Fees = () => {
                 const isOverdue = r.paymentStatus === 'Quá hạn';
                 return (
                   <tr key={r.id} style={isOverdue ? { backgroundColor: 'rgba(239,68,68,0.03)' } : {}}>
-                    <td style={{ fontWeight: 600 }}>{r.name}</td>
+                    <td>
+                      <Link to={`/students/${r.studentId}?tab=fees`} className="table-link table-title">
+                        {r.name}
+                      </Link>
+                    </td>
                     <td>{r.phone}</td>
                     <td><span className="badge purple" style={{ fontWeight: 700, fontSize: '0.75rem' }}>{r.licenseType}</span></td>
                     <td style={{ fontWeight: 600 }}>{fmt(r.totalFee)}</td>
@@ -465,20 +460,6 @@ const Fees = () => {
                       {r.dueDate || '—'}
                     </td>
                     <td><span className={`badge ${badge.cls}`}>{badge.label}</span></td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                        <button className="btn-table-action" onClick={() => openCollect(r)}>
-                          + Thu tiền
-                        </button>
-                        <button
-                          className="secondary-button compact"
-                          style={{ fontSize: '0.72rem', padding: '4px 8px' }}
-                          onClick={() => setPrintRecord(r)}
-                        >
-                          🖨️ In phiếu
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 );
               })}
@@ -507,7 +488,11 @@ const Fees = () => {
               {payments.map((p) => (
                 <tr key={p.id}>
                   <td style={{ whiteSpace: 'nowrap' }}>{p.date}</td>
-                  <td style={{ fontWeight: 600 }}>{p.studentName}</td>
+                  <td>
+                    <Link to={`/students/${p.studentId}?tab=fees`} className="table-link table-title">
+                      {p.studentName}
+                    </Link>
+                  </td>
                   <td><span className="badge purple" style={{ fontWeight: 700, fontSize: '0.75rem' }}>{p.licenseType}</span></td>
                   <td style={{ color: 'var(--success)', fontWeight: 700 }}>{fmt(p.amount)}</td>
                   <td><span className={`badge ${p.method === 'Chuyển khoản' ? 'blue' : 'neutral'}`}>{p.method}</span></td>

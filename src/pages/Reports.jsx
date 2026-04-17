@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getMockStudentProfileById } from '../data/mockStudentProfiles';
+import { getAccounts } from '../services/adminService';
 import { exportXlsx } from '../services/exportService';
 import { getBusinessReport } from '../services/reportService';
 import { getStudentProfiles } from '../services/studentService';
@@ -10,6 +12,7 @@ const fmtM = (n) => {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace('.0', '') + 'M';
   return new Intl.NumberFormat('vi-VN').format(n);
 };
+const parseMoneyValue = (value) => Number(String(value ?? '').replace(/[^\d]/g, '')) || 0;
 const fmtChartTick = (n) => {
   if (!Number.isFinite(n)) return '0';
   if (n >= 1_000_000_000) {
@@ -122,6 +125,7 @@ const Reports = () => {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo]   = useState('');
   const [profiles, setProfiles] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [report, setReport] = useState({
     kpi: {
       totalStudents: 0,
@@ -140,27 +144,65 @@ const Reports = () => {
 
   useEffect(() => {
     let mounted = true;
-    Promise.all([getBusinessReport(chartPeriod), getStudentProfiles()]).then(([businessReport, profileList]) => {
+    Promise.all([
+      getBusinessReport(chartPeriod),
+      getStudentProfiles(),
+      getAccounts().catch(() => []),
+    ]).then(([businessReport, profileList, accountList]) => {
       if (!mounted) return;
       setReport(businessReport);
       setProfiles(profileList);
+      setAccounts(accountList);
     });
     return () => { mounted = false; };
   }, [chartPeriod]);
+
+  const validConsultantNames = useMemo(() => (
+    new Set(
+      accounts
+        .map((account) => String(account.name || '').trim())
+        .filter(Boolean),
+    )
+  ), [accounts]);
+
+  const resolveConsultantName = (profile) => {
+    const rawName = String(profile.consultant || '').trim();
+    if (!rawName) return 'Chưa phân công';
+
+    const defaultConsultant = getMockStudentProfileById(profile.id)?.consultant;
+    const isSeededConsultant = rawName === defaultConsultant;
+
+    if (validConsultantNames.size > 0) {
+      return validConsultantNames.has(rawName) ? rawName : 'Chưa phân công';
+    }
+
+    return isSeededConsultant ? 'Chưa phân công' : rawName;
+  };
 
   // ── Bảng theo Nhân viên tư vấn ───────────────────────────────────────────
   const byConsultant = useMemo(() => {
     const map = {};
     profiles.forEach((p) => {
       const name = p.consultant || 'Chưa phân công';
-      if (!map[name]) map[name] = { name, count: 0, passed: 0, debt: 0 };
+      const consultantName = resolveConsultantName(p);
+      if (!map[consultantName]) map[consultantName] = { name: consultantName, count: 0, passed: 0, debt: 0 };
+      map[name] = map[consultantName];
       map[name].count += 1;
       if (p.status === 'Đã đỗ') map[name].passed += 1;
-      const debtNum = parseFloat(String(p.tuition?.debt || '0').replace(/[^0-9.]/g, '')) || 0;
+      const debtNum = parseMoneyValue(p.tuition?.debt ?? p.debt);
       map[name].debt += debtNum;
     });
-    return Object.values(map).sort((a, b) => b.count - a.count);
-  }, [profiles]);
+    return Array.from(new Map(Object.values(map).map((item) => [item.name, item])).values()).sort((a, b) => {
+      if (a.name === 'Chưa phân công') return 1;
+      if (b.name === 'Chưa phân công') return -1;
+      if (b.count !== a.count) return b.count - a.count;
+      return a.name.localeCompare(b.name, 'vi');
+    });
+  }, [profiles, validConsultantNames]);
+
+  const consultantCount = useMemo(() => (
+    byConsultant.filter((row) => row.name !== 'Chưa phân công').length
+  ), [byConsultant]);
 
   const chartData = report.monthlyStats;
   const { kpi } = report;
@@ -401,7 +443,7 @@ const Reports = () => {
             </svg>
             <span>Kết quả theo Nhân viên tư vấn</span>
           </div>
-          <span className="badge neutral">{byConsultant.length} NVTV</span>
+          <span className="badge neutral">{consultantCount} NVTV</span>
         </div>
         <table className="lite-table">
           <thead>

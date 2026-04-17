@@ -1,16 +1,20 @@
-import { mockFeeRecords, mockFeeOverview } from '../data/mockFees';
+import { mockFeeRecords } from '../data/mockFees';
+import { getStudentById, getStudentProfiles, syncStudentTuitionFromFeeRecord } from './studentService';
 import { getUserScopedKey, readStorage, writeStorage } from './storageService';
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
-// ── Storage keys ──────────────────────────────────────────────────────────────
 const FEE_RECORDS_KEY = 'feeRecords.v1';
-const FEE_PAYMENTS_KEY = 'feePayments.v1';
 
 const getStoredFeeRecords = () => readStorage(getUserScopedKey(FEE_RECORDS_KEY), mockFeeRecords);
 const saveStoredFeeRecords = (records) => writeStorage(getUserScopedKey(FEE_RECORDS_KEY), records);
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+const toNumber = (value) => {
+  if (typeof value === 'number') return value;
+  if (!value) return 0;
+  return Number(String(value).replace(/\D/g, '')) || 0;
+};
+
 const resolvePaymentStatus = (debt, dueDate) => {
   if (debt <= 0) return 'Đã đóng đủ';
   if (!dueDate) return 'Còn nợ';
@@ -19,55 +23,125 @@ const resolvePaymentStatus = (debt, dueDate) => {
   return due < new Date() ? 'Quá hạn' : 'Còn nợ';
 };
 
-// Tính lại FeeOverview từ records thực tế.
 const computeOverview = (records) => {
-  const totalRequired = records.reduce((sum, r) => sum + (r.totalFee || 0), 0);
-  const totalCollected = records.reduce((sum, r) => sum + (r.paid || 0), 0);
-  const totalDebt = records.reduce((sum, r) => sum + (r.debt || 0), 0);
-  const debtorCount = records.filter((r) => (r.debt || 0) > 0).length;
+  const totalRequired = records.reduce((sum, record) => sum + (record.totalFee || 0), 0);
+  const totalCollected = records.reduce((sum, record) => sum + (record.paid || 0), 0);
+  const totalDebt = records.reduce((sum, record) => sum + (record.debt || 0), 0);
+  const debtorCount = records.filter((record) => (record.debt || 0) > 0).length;
   return { totalRequired, totalCollected, totalDebt, debtorCount };
 };
 
-// ── API ───────────────────────────────────────────────────────────────────────
+const buildFeeRecordFromStudent = (student) => {
+  const totalFee = toNumber(student.tuition?.total || student.totalFee);
+  const paid = toNumber(student.tuition?.paid || student.paid);
+  const explicitDebt = student.tuition?.debt ?? student.debt;
+  const debt = explicitDebt !== undefined && explicitDebt !== null
+    ? toNumber(explicitDebt)
+    : Math.max(totalFee - paid, 0);
+  const dueDate = student.tuition?.deadline || null;
+
+  return {
+    id: student.id,
+    studentId: student.id,
+    name: student.name,
+    phone: student.phone,
+    licenseType: student.licenseType,
+    totalFee,
+    paid,
+    debt,
+    dueDate,
+    paymentStatus: resolvePaymentStatus(debt, dueDate),
+    payments: [],
+  };
+};
+
+const syncRecordWithStudent = (record, student) => {
+  const dueDate = record.dueDate ?? student.tuition?.deadline ?? null;
+  const totalFee = record.totalFee || toNumber(student.tuition?.total || student.totalFee);
+  const paid = record.paid || 0;
+  const debt = Math.max(record.debt ?? Math.max(totalFee - paid, 0), 0);
+
+  return {
+    ...record,
+    id: record.id || student.id,
+    studentId: student.id,
+    name: student.name,
+    phone: student.phone,
+    licenseType: student.licenseType,
+    totalFee,
+    paid,
+    debt,
+    dueDate,
+    paymentStatus: resolvePaymentStatus(debt, dueDate),
+    payments: clone(record.payments || []),
+  };
+};
+
+const syncFeeRecordsWithStudents = async () => {
+  const students = await getStudentProfiles();
+  const stored = getStoredFeeRecords();
+  const recordMap = new Map(stored.map((record) => [record.studentId, record]));
+
+  const nextRecords = students.map((student) => {
+    const existing = recordMap.get(student.id);
+    return existing ? syncRecordWithStudent(existing, student) : buildFeeRecordFromStudent(student);
+  });
+
+  if (JSON.stringify(nextRecords) !== JSON.stringify(stored)) {
+    saveStoredFeeRecords(nextRecords);
+  }
+
+  return nextRecords;
+};
+
 export const getFeeOverview = async () => {
-  const records = getStoredFeeRecords();
+  const records = await syncFeeRecordsWithStudents();
   return computeOverview(records);
 };
 
 export const getFeeRecords = async (status = 'Tất cả') => {
-  const records = getStoredFeeRecords();
+  const records = await syncFeeRecordsWithStudents();
   if (status === 'Tất cả') return clone(records);
-  return clone(records.filter((r) => r.paymentStatus === status));
+  return clone(records.filter((record) => record.paymentStatus === status));
 };
 
 export const getFeeRecordByStudentId = async (studentId) => {
-  const records = getStoredFeeRecords();
-  const record = records.find((r) => r.studentId === Number(studentId));
+  const records = await syncFeeRecordsWithStudents();
+  const record = records.find((item) => item.studentId === Number(studentId));
   return record ? clone(record) : null;
 };
 
 export const getPaymentHistory = async () => {
-  const records = getStoredFeeRecords();
-  const parseDate = (d) => {
-    if (!d) return new Date(0);
-    const [day, month, year] = d.split('/');
+  const records = await syncFeeRecordsWithStudents();
+  const parseDate = (dateText) => {
+    if (!dateText) return new Date(0);
+    const [day, month, year] = dateText.split('/');
     return new Date(year, month - 1, day);
   };
+
   return records
-    .flatMap((r) =>
-      (r.payments || []).map((p) => ({
-        ...p,
-        studentName: r.name,
-        studentPhone: r.phone,
-        licenseType: r.licenseType,
+    .flatMap((record) =>
+      (record.payments || []).map((payment) => ({
+        ...payment,
+        studentName: record.name,
+        studentPhone: record.phone,
+        studentId: record.studentId,
+        licenseType: record.licenseType,
       })),
     )
-    .sort((a, b) => parseDate(b.date) - parseDate(a.date));
+    .sort((left, right) => parseDate(right.date) - parseDate(left.date));
 };
 
 export const collectFee = async (studentId, payment) => {
-  const records = getStoredFeeRecords();
-  const index = records.findIndex((r) => r.studentId === Number(studentId));
+  const records = await syncFeeRecordsWithStudents();
+  let index = records.findIndex((record) => record.studentId === Number(studentId));
+
+  if (index === -1) {
+    const student = await getStudentById(studentId);
+    if (!student) return null;
+    records.push(buildFeeRecordFromStudent(student));
+    index = records.findIndex((record) => record.studentId === Number(studentId));
+  }
 
   if (index === -1) return null;
 
@@ -96,5 +170,6 @@ export const collectFee = async (studentId, payment) => {
 
   records[index] = updatedRecord;
   saveStoredFeeRecords(records);
+  await syncStudentTuitionFromFeeRecord(studentId, updatedRecord);
   return clone(updatedRecord);
 };

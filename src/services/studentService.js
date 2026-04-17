@@ -3,6 +3,7 @@ import { mockStudents } from '../data/mockStudents';
 import { getUserScopedKey, readStorage, writeStorage } from './storageService';
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
+const toMoneyText = (value) => `${new Intl.NumberFormat('vi-VN').format(Number(value) || 0)}đ`;
 
 // ── Storage key ──────────────────────────────────────────────────────────────
 const STUDENTS_BASE_KEY = 'students.v1';
@@ -131,6 +132,35 @@ export const updateStudent = async (id, payload) => {
   students[index] = updated;
   saveStoredStudents(students);
   return clone(updated);
+};
+
+export const syncStudentTuitionFromFeeRecord = async (studentId, feeRecord) => {
+  const students = getStoredStudents();
+  const index = students.findIndex((student) => String(student.id) === String(studentId));
+
+  if (index === -1 || !feeRecord) return null;
+
+  const current = students[index];
+  const nextStudent = {
+    ...current,
+    totalFee: String(feeRecord.totalFee || 0),
+    paid: String(feeRecord.paid || 0),
+    debt: String(feeRecord.debt || 0),
+    tuition: {
+      ...current.tuition,
+      total: toMoneyText(feeRecord.totalFee || 0),
+      paid: toMoneyText(feeRecord.paid || 0),
+      debt: toMoneyText(feeRecord.debt || 0),
+      paymentMethod: feeRecord.payments?.[feeRecord.payments.length - 1]?.method || current.tuition?.paymentMethod || 'Tiền mặt',
+      collector: feeRecord.payments?.[feeRecord.payments.length - 1]?.collector || current.tuition?.collector || '',
+      deadline: feeRecord.dueDate || current.tuition?.deadline || '',
+    },
+    updatedAt: new Date().toISOString(),
+  };
+
+  students[index] = nextStudent;
+  saveStoredStudents(students);
+  return clone(nextStudent);
 };
 
 export const deleteStudent = async (id) => {

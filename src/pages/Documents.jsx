@@ -440,9 +440,6 @@ const Documents = () => {
         </div>
         <div className="page-actions">
           <button type="button" className="secondary-button compact" onClick={handleExportDocuments}>↓ Xuất danh sách</button>
-          <button type="button" className="secondary-button compact" onClick={handleResetDocuments}>Khôi phục mẫu</button>
-          <button type="button" className="secondary-button" onClick={() => setShowUploadModal(true)}>📎 Upload hồ sơ</button>
-          <button type="button" className="btn-primary" onClick={() => openUpdateModal()}>+ Cập nhật hồ sơ</button>
         </div>
       </div>
 
@@ -472,13 +469,6 @@ const Documents = () => {
                   <div key={r.id} style={{ background: 'rgba(239,68,68,0.1)', borderRadius: '6px', padding: '6px 10px', fontSize: '0.78rem' }}>
                     <strong>{r.name}</strong>
                     <span style={{ color: '#ef4444', marginLeft: '6px' }}>— {missing}</span>
-                    <button
-                      className="secondary-button compact"
-                      style={{ marginLeft: '8px', fontSize: '0.7rem', padding: '2px 6px' }}
-                      onClick={() => handleRemind(r)}
-                    >
-                      Nhắc nhở
-                    </button>
                   </div>
                 );
               })}
@@ -580,14 +570,13 @@ const Documents = () => {
                 <th>GIẤY TỜ</th>
                 <th>PHỤ TRÁCH</th>
                 <th>GHI CHÚ</th>
-                <th>HÀNH ĐỘNG</th>
               </tr>
             </thead>
             <tbody>
               {filteredRecords.map((record) => (
                 <tr key={record.id}>
                   <td>
-                    <Link to={`/students/${record.studentId}`} className="table-link table-title">
+                    <Link to={`/students/${record.studentId}?tab=documents`} className="table-link table-title">
                       {record.name}
                     </Link>
                     <div className="detail-list-meta">{record.phone} • {record.region}</div>
@@ -613,14 +602,6 @@ const Documents = () => {
                     <div className="detail-list-meta">Cập nhật: {record.updatedAt}</div>
                   </td>
                   <td className="document-note-cell">{record.note}</td>
-                  <td>
-                    <div className="document-action-group">
-                      <Link to={`/students/${record.studentId}`} className="secondary-button compact table-action-link">
-                        Mở hồ sơ
-                      </Link>
-                      <button type="button" className="btn-table-action" onClick={() => openUpdateModal(record)}>Cập nhật</button>
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>

@@ -29,6 +29,280 @@ const parseVNDate = (str) => {
 };
 
 const parseNum = (str) => parseFloat(String(str || '0').replace(/[^0-9.]/g, '')) || 0;
+const fmtMoney = (str) => `${new Intl.NumberFormat('vi-VN').format(parseNum(str))}đ`;
+
+const StudentQuickViewModal = ({ student, isLoading, onClose }) => {
+  if (isLoading || !student) {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-box modal-box-wide student-quick-modal" onClick={(event) => event.stopPropagation()}>
+          <div className="modal-header">
+            <span className="modal-title">Xem nhanh học viên</span>
+            <button className="modal-close" onClick={onClose}>✕</button>
+          </div>
+          <div className="modal-body">
+            <div className="student-quick-loading">Đang tải thông tin học viên...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const debtValue = parseNum(student.tuition?.debt || student.debt);
+  const totalFee = fmtMoney(student.tuition?.total || student.totalFee);
+  const paidFee = fmtMoney(student.tuition?.paid || student.paid);
+  const debtText = debtValue > 0 ? fmtMoney(student.tuition?.debt || student.debt) : 'Đã thu đủ';
+  const documents = student.documents || [];
+  const pendingDocuments = documents.filter((document) => (
+    String(document.value).includes('Chưa') || String(document.value).includes('Chờ')
+  ));
+  const scheduleItems = student.schedule || [];
+  const careHistory = student.careHistory || [];
+  const notes = student.notes || [];
+  const nextSchedule = scheduleItems[0];
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box modal-box-wide student-quick-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="modal-header student-quick-modal-header">
+          <div>
+            <div className="student-quick-kicker">Xem nhanh học viên</div>
+            <span className="modal-title">Toàn bộ thông tin chính của học viên trên một popup</span>
+          </div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="modal-body student-quick-body">
+          <section className="student-quick-hero">
+            <div className="student-quick-hero-top">
+              <div className="student-quick-hero-main">
+                <div className="student-quick-avatar">{student.name?.charAt(0) || 'H'}</div>
+                <div className="student-quick-hero-copy">
+                  <h2>{student.name}</h2>
+                  <p>{student.packageName} • {student.region} • Phụ trách: {student.consultant || 'Chưa phân công'}</p>
+                  <div className="student-quick-pill-row">
+                    <span className="badge purple">#{student.id}</span>
+                    <span className="badge blue">{student.licenseType}</span>
+                    <span className={`badge ${BADGE[student.status] || 'neutral'}`}>{student.status}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="student-quick-alerts">
+                <div className={`student-quick-alert ${debtValue > 0 ? 'danger' : 'success'}`}>
+                  <span className="student-quick-alert-label">Công nợ</span>
+                  <strong>{debtText}</strong>
+                </div>
+                <div className={`student-quick-alert ${pendingDocuments.length > 0 ? 'warning' : 'success'}`}>
+                  <span className="student-quick-alert-label">Hồ sơ</span>
+                  <strong>{pendingDocuments.length > 0 ? `Thiếu ${pendingDocuments.length} mục` : 'Đủ hồ sơ'}</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="student-quick-stats">
+            <div className="student-quick-stat-card">
+              <span className="student-quick-stat-label">Số điện thoại</span>
+              <strong>{student.phone}</strong>
+              <small>{student.email || 'Chưa có email'}</small>
+            </div>
+            <div className="student-quick-stat-card">
+              <span className="student-quick-stat-label">Ngày đăng ký</span>
+              <strong>{student.registerDate}</strong>
+              <small>{student.className || 'Chưa xếp lớp'}</small>
+            </div>
+            <div className="student-quick-stat-card">
+              <span className="student-quick-stat-label">Tổng học phí</span>
+              <strong>{totalFee}</strong>
+              <small>Đã thu {paidFee}</small>
+            </div>
+            <div className="student-quick-stat-card">
+              <span className="student-quick-stat-label">Lịch thi dự kiến</span>
+              <strong>{student.exam?.expectedDate || 'Chưa có'}</strong>
+              <small>{student.exam?.batch || 'Chưa xếp đợt thi'}</small>
+            </div>
+          </section>
+
+          <section className="student-quick-grid">
+            <div className="student-quick-stack">
+              <div className="student-quick-section">
+                <div className="student-quick-section-header">
+                  <h3>Thông tin cá nhân</h3>
+                </div>
+                <div className="student-quick-info-grid">
+                  <div className="student-quick-info-item">
+                    <span>CCCD</span>
+                    <strong>{student.cccd || 'Chưa cập nhật'}</strong>
+                  </div>
+                  <div className="student-quick-info-item">
+                    <span>Ngày sinh</span>
+                    <strong>{student.birthDate || 'Chưa cập nhật'}</strong>
+                  </div>
+                  <div className="student-quick-info-item">
+                    <span>Giới tính</span>
+                    <strong>{student.gender || 'Chưa cập nhật'}</strong>
+                  </div>
+                  <div className="student-quick-info-item">
+                    <span>Nguồn học viên</span>
+                    <strong>{student.source || 'Chưa cập nhật'}</strong>
+                  </div>
+                  <div className="student-quick-info-item">
+                    <span>Người giới thiệu</span>
+                    <strong>{student.referredBy || 'Không có'}</strong>
+                  </div>
+                  <div className="student-quick-info-item">
+                    <span>Phụ trách</span>
+                    <strong>{student.consultant || 'Chưa phân công'}</strong>
+                  </div>
+                  <div className="student-quick-info-item wide">
+                    <span>Địa chỉ</span>
+                    <strong>{student.address || 'Chưa cập nhật địa chỉ'}</strong>
+                  </div>
+                  <div className="student-quick-info-item wide">
+                    <span>Liên hệ khẩn cấp</span>
+                    <strong>{student.emergencyContact || 'Chưa cập nhật'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="student-quick-section">
+                <div className="student-quick-section-header">
+                  <h3>Khóa học và học phí</h3>
+                </div>
+                <div className="student-quick-detail-grid">
+                  <div className="student-quick-detail-item">
+                    <span>Gói học</span>
+                    <strong>{student.packageName || 'Chưa cập nhật'}</strong>
+                  </div>
+                  <div className="student-quick-detail-item">
+                    <span>Lớp học</span>
+                    <strong>{student.className || 'Chưa xếp lớp'}</strong>
+                  </div>
+                  <div className="student-quick-detail-item">
+                    <span>Tổng học phí</span>
+                    <strong>{totalFee}</strong>
+                  </div>
+                  <div className="student-quick-detail-item">
+                    <span>Đã thanh toán</span>
+                    <strong>{paidFee}</strong>
+                  </div>
+                  <div className={`student-quick-detail-item ${debtValue > 0 ? 'danger' : 'success'}`}>
+                    <span>Công nợ</span>
+                    <strong>{debtText}</strong>
+                  </div>
+                  <div className="student-quick-detail-item">
+                    <span>Hạn đóng tiếp theo</span>
+                    <strong>{student.tuition?.deadline || 'Chưa có hạn'}</strong>
+                  </div>
+                  <div className="student-quick-detail-item">
+                    <span>Thanh toán gần nhất</span>
+                    <strong>{student.tuition?.paymentMethod || 'Chưa cập nhật'}</strong>
+                  </div>
+                  <div className="student-quick-detail-item">
+                    <span>Người thu tiền</span>
+                    <strong>{student.tuition?.collector || 'Chưa cập nhật'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="student-quick-section">
+                <div className="student-quick-section-header">
+                  <h3>Ghi chú nội bộ</h3>
+                </div>
+                <div className="student-quick-note-list">
+                  {notes.length > 0 ? notes.map((note) => (
+                    <div key={note} className="student-quick-note-card">{note}</div>
+                  )) : (
+                    <div className="student-quick-note-card">Chưa có ghi chú nội bộ.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="student-quick-stack">
+              <div className="student-quick-section">
+                <div className="student-quick-section-header">
+                  <h3>Lịch học và lịch thi</h3>
+                </div>
+                <div className="student-quick-list">
+                  {scheduleItems.length > 0 ? scheduleItems.map((item) => (
+                    <div key={`${item.title}-${item.time}`} className="student-quick-list-item">
+                      <div>
+                        <strong>{item.title}</strong>
+                        <span>{item.time}</span>
+                      </div>
+                      <em>{item.location}</em>
+                    </div>
+                  )) : (
+                    <div className="student-quick-list-item">
+                      <div>
+                        <strong>Chưa có lịch học</strong>
+                        <span>Hệ thống chưa xếp buổi học cụ thể</span>
+                      </div>
+                      <em>—</em>
+                    </div>
+                  )}
+                  <div className="student-quick-list-item highlight">
+                    <div>
+                      <strong>{student.exam?.batch || 'Chưa có đợt thi'}</strong>
+                      <span>{student.exam?.location || 'Đang chờ phân bổ địa điểm'}</span>
+                    </div>
+                    <em>{student.exam?.expectedDate || 'Chưa có ngày thi'}</em>
+                  </div>
+                </div>
+              </div>
+
+              <div className="student-quick-section">
+                <div className="student-quick-section-header">
+                  <h3>Hồ sơ và sức khỏe</h3>
+                </div>
+                <div className="student-quick-document-list">
+                  {documents.map((document) => (
+                    <div key={document.label} className={`student-quick-document ${document.tone || 'neutral'}`}>
+                      <span>{document.label}</span>
+                      <strong>{document.value}</strong>
+                    </div>
+                  ))}
+                </div>
+                <div className="student-quick-health-card">
+                  <strong>{student.healthCheck?.status || 'Chưa cập nhật sức khỏe'}</strong>
+                  <span>{student.healthCheck?.clinic || 'Chưa có phòng khám'}</span>
+                  <em>{student.healthCheck?.appointment || 'Chưa có lịch khám'} • {student.healthCheck?.result || 'Chưa có kết quả'}</em>
+                  <p>{student.healthCheck?.note || 'Chưa có ghi chú sức khỏe.'}</p>
+                </div>
+              </div>
+
+              <div className="student-quick-section">
+                <div className="student-quick-section-header">
+                  <h3>Lịch sử chăm sóc</h3>
+                </div>
+                <div className="student-quick-timeline">
+                  {careHistory.length > 0 ? careHistory.map((item) => (
+                    <div key={`${item.time}-${item.title}`} className="student-quick-timeline-item">
+                      <span>{item.time}</span>
+                      <strong>{item.title}</strong>
+                      <p>{item.description}</p>
+                    </div>
+                  )) : (
+                    <div className="student-quick-timeline-item">
+                      <span>Chưa phát sinh</span>
+                      <strong>Chưa có lịch sử chăm sóc</strong>
+                      <p>Hệ thống chưa ghi nhận lịch sử tương tác với học viên này.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="modal-footer student-quick-close-row">
+            <button type="button" className="secondary-button" onClick={onClose}>Đóng</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ─── Sort Icon ────────────────────────────────────────────────────────────────
 const SortIcon = ({ col, sortConfig }) => {
@@ -263,6 +537,7 @@ const Students = () => {
     setSortConfig({ col: null, dir: 'asc' });
   };
 
+
   return (
     <div>
       {showModal && <AddStudentModal regions={regions} onClose={() => setShowModal(false)} onAdd={handleAdd} />}
@@ -420,7 +695,9 @@ const Students = () => {
                 </td>
                 <td><span className={`badge ${BADGE[s.status] || 'neutral'}`}>{s.status}</span></td>
                 <td>
-                  <Link to={`/students/${s.id}`} className="secondary-button compact table-action-link">Xem chi tiết</Link>
+                  <Link to={`/students/${s.id}`} className="secondary-button compact table-action-link">
+                    Xem chi tiết
+                  </Link>
                 </td>
               </tr>
             ))}
