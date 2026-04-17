@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import PaginationControls from '../components/PaginationControls';
+import usePagination from '../hooks/usePagination';
 import {
   createReferrer,
   getRecentReferrals,
@@ -161,6 +163,15 @@ const Referrers = () => {
   const filteredReferrers = activeSource === 'Tất cả'
     ? referrers
     : referrers.filter((referrer) => referrer.source === activeSource);
+  const referrerPagination = usePagination(filteredReferrers, {
+    initialPageSize: 8,
+    pageSizeOptions: [8, 16, 32],
+    resetDeps: [activeSource],
+  });
+  const recentReferralPagination = usePagination(recentReferrals, {
+    initialPageSize: 6,
+    pageSizeOptions: [6, 12, 24],
+  });
 
   const sourceCount = (source) => (
     source === 'Tất cả'
@@ -295,7 +306,7 @@ const Referrers = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredReferrers.map((referrer) => (
+                {referrerPagination.pageItems.map((referrer) => (
                   <tr key={referrer.id}>
                     <td>
                       <div className="table-title">{referrer.name}</div>
@@ -311,6 +322,18 @@ const Referrers = () => {
                 ))}
               </tbody>
             </table>
+            <PaginationControls
+              page={referrerPagination.page}
+              totalPages={referrerPagination.totalPages}
+              totalItems={referrerPagination.totalItems}
+              pageSize={referrerPagination.pageSize}
+              startItem={referrerPagination.startItem}
+              endItem={referrerPagination.endItem}
+              onPageChange={referrerPagination.setPage}
+              onPageSizeChange={referrerPagination.setPageSize}
+              pageSizeOptions={referrerPagination.pageSizeOptions}
+              itemLabel="người giới thiệu"
+            />
           </div>
         </div>
 
@@ -349,7 +372,7 @@ const Referrers = () => {
               <span className="badge neutral">{recentReferrals.length} lượt</span>
             </div>
             <div className="recent-referral-list">
-              {recentReferrals.map((item) => (
+              {recentReferralPagination.pageItems.map((item) => (
                 <div key={item.id} className="recent-referral-item">
                   <div>
                     <div className="table-title">{item.studentName}</div>
@@ -362,6 +385,19 @@ const Referrers = () => {
                 </div>
               ))}
             </div>
+            <PaginationControls
+              page={recentReferralPagination.page}
+              totalPages={recentReferralPagination.totalPages}
+              totalItems={recentReferralPagination.totalItems}
+              pageSize={recentReferralPagination.pageSize}
+              startItem={recentReferralPagination.startItem}
+              endItem={recentReferralPagination.endItem}
+              onPageChange={recentReferralPagination.setPage}
+              onPageSizeChange={recentReferralPagination.setPageSize}
+              pageSizeOptions={recentReferralPagination.pageSizeOptions}
+              itemLabel="lượt giới thiệu"
+              className="card"
+            />
           </div>
         </div>
       </div>

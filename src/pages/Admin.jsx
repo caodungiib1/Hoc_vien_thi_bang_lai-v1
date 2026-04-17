@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import PaginationControls from '../components/PaginationControls';
+import usePagination from '../hooks/usePagination';
 import {
   createAccount,
   getAccounts,
@@ -17,6 +19,10 @@ const AVATAR_COLORS = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626'];
 // ─── Tab: Danh sách tài khoản ─────────────────────────────────────────────────
 const TabAccounts = ({ accounts, roles, setAccounts }) => {
   const [confirmReset, setConfirmReset] = useState(null);
+  const accountPagination = usePagination(accounts, {
+    initialPageSize: 8,
+    pageSizeOptions: [8, 16, 32],
+  });
   // Backend có thể trả role dạng label ('Quản trị viên') hoặc id ('admin') — hỗ trợ cả hai.
   const roleMap = Object.fromEntries([
     ...roles.map(r => [r.id, r]),
@@ -54,7 +60,7 @@ const TabAccounts = ({ accounts, roles, setAccounts }) => {
             </tr>
           </thead>
           <tbody>
-            {accounts.map((acc, idx) => {
+            {accountPagination.pageItems.map((acc, idx) => {
               const role = roleMap[acc.role] || { label: acc.role, color: 'neutral' };
               const isActive = acc.status === 'active';
               return (
@@ -103,6 +109,18 @@ const TabAccounts = ({ accounts, roles, setAccounts }) => {
             })}
           </tbody>
         </table>
+        <PaginationControls
+          page={accountPagination.page}
+          totalPages={accountPagination.totalPages}
+          totalItems={accountPagination.totalItems}
+          pageSize={accountPagination.pageSize}
+          startItem={accountPagination.startItem}
+          endItem={accountPagination.endItem}
+          onPageChange={accountPagination.setPage}
+          onPageSizeChange={accountPagination.setPageSize}
+          pageSizeOptions={accountPagination.pageSizeOptions}
+          itemLabel="tài khoản"
+        />
       </div>
     </div>
   );
@@ -223,6 +241,9 @@ const TabSystemLogs = ({ logs }) => {
   const successCount = logs.filter(log => log.status === 'Thành công').length;
   const errorCount = logs.length - successCount;
   const moduleCount = new Set(logs.map(log => log.module)).size;
+  const logPagination = usePagination(logs, {
+    initialPageSize: 10,
+  });
 
   return (
     <div>
@@ -266,7 +287,7 @@ const TabSystemLogs = ({ logs }) => {
             </tr>
           </thead>
           <tbody>
-            {logs.map(log => (
+            {logPagination.pageItems.map(log => (
               <tr key={log.id}>
                 <td><span className="system-log-id">{log.id}</span></td>
                 <td>{log.time}</td>
@@ -281,6 +302,17 @@ const TabSystemLogs = ({ logs }) => {
             ))}
           </tbody>
         </table>
+        <PaginationControls
+          page={logPagination.page}
+          totalPages={logPagination.totalPages}
+          totalItems={logPagination.totalItems}
+          pageSize={logPagination.pageSize}
+          startItem={logPagination.startItem}
+          endItem={logPagination.endItem}
+          onPageChange={logPagination.setPage}
+          onPageSizeChange={logPagination.setPageSize}
+          itemLabel="log"
+        />
       </div>
     </div>
   );

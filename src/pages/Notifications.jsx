@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import PaginationControls from '../components/PaginationControls';
+import usePagination from '../hooks/usePagination';
 import {
   createNotificationRecord,
   getNotificationChannels,
@@ -18,6 +20,10 @@ const TabHistory = ({ history, channels }) => {
   const filtered = filterCh === 'Tất cả' ? history : history.filter(h => h.channel === filterCh);
   const sent  = history.filter(h => h.status === 'sent').length;
   const error = history.filter(h => h.status === 'error').length;
+  const historyPagination = usePagination(filtered, {
+    initialPageSize: 10,
+    resetDeps: [filterCh],
+  });
 
   return (
     <div>
@@ -66,7 +72,7 @@ const TabHistory = ({ history, channels }) => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(r => (
+            {historyPagination.pageItems.map(r => (
               <tr key={r.id}>
                 <td style={{ fontWeight: 600 }}>{r.student}</td>
                 <td><span className={`badge ${CHANNEL_COLORS[r.channel]}`}>{r.channel}</span></td>
@@ -82,6 +88,17 @@ const TabHistory = ({ history, channels }) => {
             ))}
           </tbody>
         </table>
+        <PaginationControls
+          page={historyPagination.page}
+          totalPages={historyPagination.totalPages}
+          totalItems={historyPagination.totalItems}
+          pageSize={historyPagination.pageSize}
+          startItem={historyPagination.startItem}
+          endItem={historyPagination.endItem}
+          onPageChange={historyPagination.setPage}
+          onPageSizeChange={historyPagination.setPageSize}
+          itemLabel="thông báo"
+        />
       </div>
     </div>
   );

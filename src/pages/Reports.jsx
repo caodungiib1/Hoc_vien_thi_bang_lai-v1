@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import PaginationControls from '../components/PaginationControls';
 import { getMockStudentProfileById } from '../data/mockStudentProfiles';
+import usePagination from '../hooks/usePagination';
 import { getAccounts } from '../services/adminService';
 import { exportXlsx } from '../services/exportService';
 import { getBusinessReport } from '../services/reportService';
@@ -203,6 +205,14 @@ const Reports = () => {
   const consultantCount = useMemo(() => (
     byConsultant.filter((row) => row.name !== 'Chưa phân công').length
   ), [byConsultant]);
+  const consultantPagination = usePagination(byConsultant, {
+    initialPageSize: 8,
+    pageSizeOptions: [8, 16, 32],
+  });
+  const referrerPagination = usePagination(report.referrers || [], {
+    initialPageSize: 8,
+    pageSizeOptions: [8, 16, 32],
+  });
 
   const chartData = report.monthlyStats;
   const { kpi } = report;
@@ -452,15 +462,17 @@ const Reports = () => {
             </tr>
           </thead>
           <tbody>
-            {byConsultant.map((row, i) => (
+            {consultantPagination.pageItems.map((row, i) => {
+              const rank = consultantPagination.startItem + i;
+              return (
               <tr key={row.name}>
                 <td>
                   <span style={{
                     width: 24, height: 24, borderRadius: '50%', display: 'inline-flex',
                     alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800,
-                    background: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : 'var(--bg-surface-strong)',
-                    color: i < 2 ? '#fff' : 'var(--text-secondary)',
-                  }}>{i + 1}</span>
+                    background: rank === 1 ? '#f59e0b' : rank === 2 ? '#94a3b8' : 'var(--bg-surface-strong)',
+                    color: rank <= 2 ? '#fff' : 'var(--text-secondary)',
+                  }}>{rank}</span>
                 </td>
                 <td style={{ fontWeight: 700 }}>{row.name}</td>
                 <td><span className="badge bl">{row.count} HV</span></td>
@@ -475,9 +487,22 @@ const Reports = () => {
                   {row.debt > 0 ? new Intl.NumberFormat('vi-VN').format(row.debt) + 'đ' : '✓ Đủ'}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
+        <PaginationControls
+          page={consultantPagination.page}
+          totalPages={consultantPagination.totalPages}
+          totalItems={consultantPagination.totalItems}
+          pageSize={consultantPagination.pageSize}
+          startItem={consultantPagination.startItem}
+          endItem={consultantPagination.endItem}
+          onPageChange={consultantPagination.setPage}
+          onPageSizeChange={consultantPagination.setPageSize}
+          pageSizeOptions={consultantPagination.pageSizeOptions}
+          itemLabel="nhân viên"
+        />
       </div>
 
       {/* ── Top Người giới thiệu ── */}
@@ -507,17 +532,19 @@ const Reports = () => {
             </tr>
           </thead>
           <tbody>
-            {report.referrers.map((r, i) => (
+            {referrerPagination.pageItems.map((r, i) => {
+              const rank = referrerPagination.startItem + i;
+              return (
               <tr key={r.id}>
                 <td>
                   <span style={{
                     width: 24, height: 24, borderRadius: '50%',
-                    background: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : i === 2 ? '#b45309' : 'var(--tone-slate-bg)',
-                    color: i < 3 ? '#fff' : 'var(--text-secondary)',
+                    background: rank === 1 ? '#f59e0b' : rank === 2 ? '#94a3b8' : rank === 3 ? '#b45309' : 'var(--tone-slate-bg)',
+                    color: rank <= 3 ? '#fff' : 'var(--text-secondary)',
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '0.72rem', fontWeight: 800,
                   }}>
-                    {i + 1}
+                    {rank}
                   </span>
                 </td>
                 <td style={{ fontWeight: 700 }}>{r.name}</td>
@@ -527,9 +554,22 @@ const Reports = () => {
                 </td>
                 <td style={{ color: 'var(--success)', fontWeight: 700 }}>{fmt(r.commission)}</td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
+        <PaginationControls
+          page={referrerPagination.page}
+          totalPages={referrerPagination.totalPages}
+          totalItems={referrerPagination.totalItems}
+          pageSize={referrerPagination.pageSize}
+          startItem={referrerPagination.startItem}
+          endItem={referrerPagination.endItem}
+          onPageChange={referrerPagination.setPage}
+          onPageSizeChange={referrerPagination.setPageSize}
+          pageSizeOptions={referrerPagination.pageSizeOptions}
+          itemLabel="người giới thiệu"
+        />
       </div>
     </div>
   );

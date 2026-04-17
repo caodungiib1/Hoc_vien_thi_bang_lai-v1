@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import PaginationControls from '../components/PaginationControls';
+import usePagination from '../hooks/usePagination';
 import { exportCsv } from '../services/exportService';
 import {
   getDocumentRecords,
@@ -304,6 +306,11 @@ const Documents = () => {
   const filteredRecords = activeFilter === 'Tất cả'
     ? records
     : records.filter((record) => record.overallStatus === activeFilter);
+  const documentPagination = usePagination(filteredRecords, {
+    initialPageSize: 8,
+    pageSizeOptions: [8, 16, 32],
+    resetDeps: [activeFilter],
+  });
 
   const filterCount = (filter) => (
     filter === 'Tất cả'
@@ -573,7 +580,7 @@ const Documents = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredRecords.map((record) => (
+              {documentPagination.pageItems.map((record) => (
                 <tr key={record.id}>
                   <td>
                     <Link to={`/students/${record.studentId}?tab=documents`} className="table-link table-title">
@@ -606,6 +613,18 @@ const Documents = () => {
               ))}
             </tbody>
           </table>
+          <PaginationControls
+            page={documentPagination.page}
+            totalPages={documentPagination.totalPages}
+            totalItems={documentPagination.totalItems}
+            pageSize={documentPagination.pageSize}
+            startItem={documentPagination.startItem}
+            endItem={documentPagination.endItem}
+            onPageChange={documentPagination.setPage}
+            onPageSizeChange={documentPagination.setPageSize}
+            pageSizeOptions={documentPagination.pageSizeOptions}
+            itemLabel="hồ sơ"
+          />
         </div>
       </div>
     </div>

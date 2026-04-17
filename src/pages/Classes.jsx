@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import PaginationControls from '../components/PaginationControls';
+import usePagination from '../hooks/usePagination';
 import { createClass, getClasses, getClassSummary, resetClassesToDefault } from '../services/classService';
 import { exportCsv } from '../services/exportService';
 
@@ -235,6 +237,16 @@ const Classes = () => {
     () => classes.find((item) => item.id === selectedClassId) || classes[0],
     [classes, selectedClassId],
   );
+  const classCardPagination = usePagination(filteredClasses, {
+    initialPageSize: 6,
+    pageSizeOptions: [6, 12, 24],
+    resetDeps: [activeLicense],
+  });
+  const classStudentPagination = usePagination(selectedClass?.students || [], {
+    initialPageSize: 8,
+    pageSizeOptions: [8, 16, 32],
+    resetDeps: [selectedClass?.id],
+  });
 
   const filterCount = (license) => (
     license === 'Tất cả'
@@ -373,7 +385,7 @@ const Classes = () => {
           </div>
 
           <div className="class-card-list">
-            {filteredClasses.map((classItem) => (
+            {classCardPagination.pageItems.map((classItem) => (
               <button
                 key={classItem.id}
                 type="button"
@@ -402,6 +414,19 @@ const Classes = () => {
               </button>
             ))}
           </div>
+          <PaginationControls
+            page={classCardPagination.page}
+            totalPages={classCardPagination.totalPages}
+            totalItems={classCardPagination.totalItems}
+            pageSize={classCardPagination.pageSize}
+            startItem={classCardPagination.startItem}
+            endItem={classCardPagination.endItem}
+            onPageChange={classCardPagination.setPage}
+            onPageSizeChange={classCardPagination.setPageSize}
+            pageSizeOptions={classCardPagination.pageSizeOptions}
+            itemLabel="lớp học"
+            className="card"
+          />
         </div>
 
         <div className="class-detail-stack">
@@ -478,7 +503,7 @@ const Classes = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedClass?.students.map((student) => (
+                  {classStudentPagination.pageItems.map((student) => (
                     <tr key={student.id}>
                       <td>
                         <div className="table-title">{student.name}</div>
@@ -500,6 +525,18 @@ const Classes = () => {
                   ))}
                 </tbody>
               </table>
+              <PaginationControls
+                page={classStudentPagination.page}
+                totalPages={classStudentPagination.totalPages}
+                totalItems={classStudentPagination.totalItems}
+                pageSize={classStudentPagination.pageSize}
+                startItem={classStudentPagination.startItem}
+                endItem={classStudentPagination.endItem}
+                onPageChange={classStudentPagination.setPage}
+                onPageSizeChange={classStudentPagination.setPageSize}
+                pageSizeOptions={classStudentPagination.pageSizeOptions}
+                itemLabel="học viên"
+              />
             </div>
           </div>
         </div>

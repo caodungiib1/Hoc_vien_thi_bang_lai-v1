@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import PaginationControls from '../components/PaginationControls';
+import usePagination from '../hooks/usePagination';
 import { createTask, deleteTask, getTaskPriorities, getTasks, toggleTaskDone } from '../services/taskService';
 
 const PRIORITY_BADGE = { 'Khẩn': 're', 'Bình thường': 'bl', 'Thấp': 'neutral' };
@@ -74,6 +76,10 @@ const Tasks = () => {
     if (filterDone === 'Đã xong'   && !t.done) return false;
     return true;
   });
+  const taskPagination = usePagination(filtered, {
+    initialPageSize: 10,
+    resetDeps: [filterPri, filterDone],
+  });
 
   const doneCount    = tasks.filter(t => t.done).length;
   const urgentCount  = tasks.filter(t => !t.done && t.priority === 'Khẩn').length;
@@ -137,9 +143,21 @@ const Tasks = () => {
         {filtered.length === 0
           ? <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Không có việc nào phù hợp.</div>
           : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {filtered.map(t => (
+              {taskPagination.pageItems.map(t => (
                 <TaskItem key={t.id} task={t} onToggle={toggle} onDelete={remove} />
               ))}
+              <PaginationControls
+                page={taskPagination.page}
+                totalPages={taskPagination.totalPages}
+                totalItems={taskPagination.totalItems}
+                pageSize={taskPagination.pageSize}
+                startItem={taskPagination.startItem}
+                endItem={taskPagination.endItem}
+                onPageChange={taskPagination.setPage}
+                onPageSizeChange={taskPagination.setPageSize}
+                itemLabel="công việc"
+                className="card"
+              />
             </div>
         }
       </div>

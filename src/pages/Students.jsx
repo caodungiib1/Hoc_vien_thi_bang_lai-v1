@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import PaginationControls from '../components/PaginationControls';
+import usePagination from '../hooks/usePagination';
 import { createStudent, getStudents } from '../services/studentService';
 import { exportXlsx } from '../services/exportService';
 
@@ -493,6 +495,22 @@ const Students = () => {
     });
   }, [filtered, sortConfig]);
 
+  const studentPagination = usePagination(sorted, {
+    initialPageSize: 10,
+    resetDeps: [
+      activeTab,
+      search,
+      filterStatus,
+      filterLicense,
+      filterRegion,
+      filterFee,
+      filterExam,
+      filterReferrer,
+      filterDateFrom,
+      filterDateTo,
+    ],
+  });
+
   const handleSort = (col) => {
     setSortConfig((prev) => ({
       col,
@@ -679,7 +697,7 @@ const Students = () => {
                   Không tìm thấy học viên phù hợp với bộ lọc.
                 </td>
               </tr>
-            ) : sorted.map((s) => (
+            ) : studentPagination.pageItems.map((s) => (
               <tr key={s.id}>
                 <td className="table-strong">
                   <Link to={`/students/${s.id}`} className="table-link">{s.name}</Link>
@@ -703,6 +721,17 @@ const Students = () => {
             ))}
           </tbody>
         </table>
+        <PaginationControls
+          page={studentPagination.page}
+          totalPages={studentPagination.totalPages}
+          totalItems={studentPagination.totalItems}
+          pageSize={studentPagination.pageSize}
+          startItem={studentPagination.startItem}
+          endItem={studentPagination.endItem}
+          onPageChange={studentPagination.setPage}
+          onPageSizeChange={studentPagination.setPageSize}
+          itemLabel="học viên"
+        />
       </div>
     </div>
   );

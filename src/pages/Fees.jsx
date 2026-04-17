@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import PaginationControls from '../components/PaginationControls';
+import usePagination from '../hooks/usePagination';
 import { collectFee, getFeeOverview, getFeeRecords, getPaymentHistory } from '../services/feeService';
 import { getStudents } from '../services/studentService';
 import { exportXlsx } from '../services/exportService';
@@ -324,6 +326,13 @@ const Fees = () => {
   };
 
   const filtered = feeRecords.filter((r) => activeTab === 'Tất cả' || r.paymentStatus === activeTab);
+  const feePagination = usePagination(filtered, {
+    initialPageSize: 10,
+    resetDeps: [activeTab],
+  });
+  const paymentPagination = usePagination(payments, {
+    initialPageSize: 10,
+  });
 
   return (
     <div>
@@ -438,7 +447,7 @@ const Fees = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => {
+              {feePagination.pageItems.map((r) => {
                 const badge     = getStatusBadge(r.paymentStatus);
                 const isDebt    = r.debt > 0;
                 const isOverdue = r.paymentStatus === 'Quá hạn';
@@ -465,6 +474,17 @@ const Fees = () => {
               })}
             </tbody>
           </table>
+          <PaginationControls
+            page={feePagination.page}
+            totalPages={feePagination.totalPages}
+            totalItems={feePagination.totalItems}
+            pageSize={feePagination.pageSize}
+            startItem={feePagination.startItem}
+            endItem={feePagination.endItem}
+            onPageChange={feePagination.setPage}
+            onPageSizeChange={feePagination.setPageSize}
+            itemLabel="học viên"
+          />
         </div>
       </div>
 
@@ -485,7 +505,7 @@ const Fees = () => {
               </tr>
             </thead>
             <tbody>
-              {payments.map((p) => (
+              {paymentPagination.pageItems.map((p) => (
                 <tr key={p.id}>
                   <td style={{ whiteSpace: 'nowrap' }}>{p.date}</td>
                   <td>
@@ -502,6 +522,17 @@ const Fees = () => {
               ))}
             </tbody>
           </table>
+          <PaginationControls
+            page={paymentPagination.page}
+            totalPages={paymentPagination.totalPages}
+            totalItems={paymentPagination.totalItems}
+            pageSize={paymentPagination.pageSize}
+            startItem={paymentPagination.startItem}
+            endItem={paymentPagination.endItem}
+            onPageChange={paymentPagination.setPage}
+            onPageSizeChange={paymentPagination.setPageSize}
+            itemLabel="giao dịch"
+          />
         </div>
       </div>
     </div>

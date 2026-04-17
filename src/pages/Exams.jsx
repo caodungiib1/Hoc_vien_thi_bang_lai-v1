@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import PaginationControls from '../components/PaginationControls';
+import usePagination from '../hooks/usePagination';
 import {
   createExamBatch,
   getExamBatches,
@@ -364,6 +366,19 @@ const Exams = () => {
     () => examBatches.find((batch) => batch.id === selectedBatchId) || examBatches[0],
     [examBatches, selectedBatchId],
   );
+  const batchPagination = usePagination(examBatches, {
+    initialPageSize: 6,
+    pageSizeOptions: [6, 12, 24],
+  });
+  const batchStudentPagination = usePagination(selectedBatch?.students || [], {
+    initialPageSize: 8,
+    pageSizeOptions: [8, 16, 32],
+    resetDeps: [selectedBatch?.id],
+  });
+  const unscheduledPagination = usePagination(unscheduledStudents, {
+    initialPageSize: 8,
+    pageSizeOptions: [8, 16, 32],
+  });
 
   // ── Handlers ────────────────────────────────────────────────────────────
   const saveResult = async (studentId, lt, th) => {
@@ -529,7 +544,7 @@ const Exams = () => {
               <span className="badge neutral">{examBatches.length} đợt</span>
             </div>
             <div className="exam-batch-list">
-              {examBatches.map((batch) => (
+              {batchPagination.pageItems.map((batch) => (
                 <button
                   type="button" key={batch.id}
                   className={`exam-batch-card ${selectedBatch?.id === batch.id ? 'active' : ''}`}
@@ -548,6 +563,19 @@ const Exams = () => {
                 </button>
               ))}
             </div>
+            <PaginationControls
+              page={batchPagination.page}
+              totalPages={batchPagination.totalPages}
+              totalItems={batchPagination.totalItems}
+              pageSize={batchPagination.pageSize}
+              startItem={batchPagination.startItem}
+              endItem={batchPagination.endItem}
+              onPageChange={batchPagination.setPage}
+              onPageSizeChange={batchPagination.setPageSize}
+              pageSizeOptions={batchPagination.pageSizeOptions}
+              itemLabel="đợt thi"
+              className="card"
+            />
           </div>
 
           {/* Cột phải: chi tiết đợt */}
@@ -600,7 +628,7 @@ const Exams = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedBatch?.students.map((student) => {
+                  {batchStudentPagination.pageItems.map((student) => {
                     const res = results[student.id] || {};
                     return (
                       <tr key={student.id}>
@@ -638,6 +666,18 @@ const Exams = () => {
                   })}
                 </tbody>
               </table>
+              <PaginationControls
+                page={batchStudentPagination.page}
+                totalPages={batchStudentPagination.totalPages}
+                totalItems={batchStudentPagination.totalItems}
+                pageSize={batchStudentPagination.pageSize}
+                startItem={batchStudentPagination.startItem}
+                endItem={batchStudentPagination.endItem}
+                onPageChange={batchStudentPagination.setPage}
+                onPageSizeChange={batchStudentPagination.setPageSize}
+                pageSizeOptions={batchStudentPagination.pageSizeOptions}
+                itemLabel="học viên"
+              />
             </div>
           </div>
         </div>
@@ -660,7 +700,7 @@ const Exams = () => {
               </tr>
             </thead>
             <tbody>
-              {unscheduledStudents.map((student) => (
+              {unscheduledPagination.pageItems.map((student) => (
                 <tr key={student.id}>
                   <td>
                     <div className="table-title">{student.name}</div>
@@ -678,6 +718,18 @@ const Exams = () => {
               ))}
             </tbody>
           </table>
+          <PaginationControls
+            page={unscheduledPagination.page}
+            totalPages={unscheduledPagination.totalPages}
+            totalItems={unscheduledPagination.totalItems}
+            pageSize={unscheduledPagination.pageSize}
+            startItem={unscheduledPagination.startItem}
+            endItem={unscheduledPagination.endItem}
+            onPageChange={unscheduledPagination.setPage}
+            onPageSizeChange={unscheduledPagination.setPageSize}
+            pageSizeOptions={unscheduledPagination.pageSizeOptions}
+            itemLabel="học viên"
+          />
         </div>
       </div>
     </>
