@@ -1,0 +1,373 @@
+1. Mô tả tổng quan hệ thống
+
+Hệ thống được xây dựng với mục tiêu quản lý toàn bộ quy trình học viên đăng ký học và thi bằng lái xe máy, ô tô từ lúc tiếp nhận thông tin đến khi học viên đỗ, thi lại hoặc hoàn tất học phí.
+
+Hệ thống giúp trung tâm:
+
+Quản lý danh sách học viên tập trung
+Theo dõi trạng thái từng học viên theo từng giai đoạn
+Quản lý lịch thi, học phí, hồ sơ và kết quả
+Hỗ trợ đội ngũ kinh doanh và chăm sóc học viên
+Tự động gửi thông báo để giảm thao tác thủ công
+Theo dõi hiệu quả tuyển sinh và vận hành
+2. Các tính năng chính của hệ thống
+2.1. Dashboard tổng quan
+
+Đây là màn hình trung tâm, giúp quản lý nắm nhanh tình hình toàn bộ học viên và hoạt động của trung tâm.
+
+Chỉ số tổng quan cần hiển thị:
+Tổng số học viên
+Số học viên chờ khám sức khỏe
+Số học viên đã khám sức khỏe
+Số học viên đã nộp hồ sơ
+Số học viên đang học
+Số học viên đang chờ thi
+Số học viên đã đỗ
+Số học viên thi lại
+Số học viên còn nợ học phí
+Số lịch thi sắp tới
+Số học viên đăng ký gần đây
+Nội dung bổ sung nên có:
+Danh sách học viên mới đăng ký gần nhất
+Danh sách học viên sắp thi
+Danh sách học viên còn thiếu hồ sơ
+Danh sách học viên còn nợ học phí
+Biểu đồ số lượng đăng ký theo ngày, tuần, tháng
+Biểu đồ học viên theo hạng bằng
+Mục đích:
+Giúp ban quản lý nhìn tổng quan ngay khi đăng nhập
+Phát hiện nhanh các nhóm học viên cần xử lý
+2.2. Quản lý danh sách học viên
+
+Đây là module quan trọng nhất, dùng để quản lý toàn bộ thông tin học viên.
+
+Các tab nên có:
+Tất cả
+Xe máy
+Ô tô
+Thông tin cần hiển thị trong danh sách:
+Họ và tên
+Số điện thoại
+Người giới thiệu
+Ngày sinh
+Số CCCD
+Hạng bằng
+Khu vực
+Ngày đăng ký
+Tổng học phí
+Địa chỉ
+Trạng thái học viên
+Bộ lọc nên có:
+Theo loại bằng: xe máy / ô tô
+Theo hạng bằng
+Theo khu vực
+Theo trạng thái
+Theo ngày đăng ký
+Theo người giới thiệu
+Theo tình trạng học phí
+Theo lịch thi
+Theo từ khóa tìm kiếm: tên, số điện thoại, CCCD
+Chức năng nên có:
+Thêm mới học viên
+Cập nhật thông tin học viên
+Xem chi tiết học viên
+Tìm kiếm nhanh
+Sắp xếp danh sách
+Xuất Excel danh sách học viên
+Mục đích:
+Quản lý tập trung thông tin học viên
+Dễ tìm kiếm và xử lý theo từng nhóm
+2.3. Màn hình chi tiết học viên
+
+Mỗi học viên nên có một trang chi tiết riêng để theo dõi toàn bộ quá trình.
+
+Thông tin nên hiển thị:
+Thông tin cá nhân
+Thông tin khóa học / hạng bằng
+Thông tin người giới thiệu
+Hồ sơ giấy tờ đã nộp
+Tình trạng khám sức khỏe
+Tình trạng học phí
+Lịch học
+Lịch thi
+Kết quả thi
+Ghi chú nội bộ
+Lịch sử chăm sóc / liên hệ
+Trạng thái học viên nên theo dõi:
+Mới đăng ký
+Chờ khám sức khỏe
+Đã khám sức khỏe
+Chờ nộp hồ sơ
+Đã nộp hồ sơ
+Đang học
+Chờ thi
+Đã đỗ
+Thi lại
+Tạm dừng
+Hủy
+Mục đích:
+Giúp nhân viên xem được toàn bộ hành trình của một học viên
+Hạn chế bỏ sót bước xử lý
+2.4. Quản lý lịch thi
+
+Bạn đã nêu rõ phần này, nên hệ thống cần một module riêng cho lịch thi.
+
+Nội dung cần có:
+Danh sách các đợt thi sắp tới
+Danh sách học viên theo từng đợt thi
+Danh sách học viên chưa có lịch thi
+Thông tin mỗi đợt thi:
+Tên đợt thi
+Ngày thi
+Giờ thi
+Địa điểm thi
+Loại thi
+Hạng bằng áp dụng
+Số lượng học viên tham gia
+Trạng thái đợt thi
+Chức năng nên có:
+Tạo đợt thi mới
+Gán học viên vào đợt thi
+Chuyển học viên sang đợt thi khác
+In danh sách học viên dự thi
+Lọc học viên chưa được xếp lịch thi
+Gửi thông báo lịch thi tự động
+Mục đích:
+Quản lý lịch thi khoa học
+Tránh bỏ sót học viên chưa được xếp lịch
+2.5. Quản lý học phí
+
+Đây là module rất quan trọng để kiểm soát dòng tiền và công nợ học viên.
+
+Thông tin cần quản lý:
+Tổng học phí của từng học viên
+Số tiền đã thanh toán
+Số tiền còn nợ
+Ngày thanh toán
+Hình thức thanh toán
+Người thu tiền
+Ghi chú thanh toán
+Chức năng nên có:
+Ghi nhận từng lần đóng học phí
+Theo dõi học viên còn nợ học phí
+Cảnh báo học viên quá hạn thanh toán
+In phiếu thu
+Xuất báo cáo học phí
+Lọc theo:
+đã đóng đủ
+đóng một phần
+còn nợ
+quá hạn
+Mục đích:
+Quản lý chính xác học phí từng học viên
+Hỗ trợ kế toán và bộ phận tuyển sinh
+2.6. Kết quả kinh doanh
+
+Module này dùng để theo dõi hiệu quả tuyển sinh và hoạt động kinh doanh.
+
+Chỉ số nên có:
+Tổng số học viên đăng ký trong kỳ
+Tổng doanh thu học phí
+Số tiền đã thu
+Số tiền còn nợ
+Số học viên theo từng hạng bằng
+Số học viên theo từng khu vực
+Số học viên theo từng nguồn giới thiệu
+Tỷ lệ đỗ
+Tỷ lệ thi lại
+Báo cáo nên có:
+Báo cáo theo ngày
+Báo cáo theo tuần
+Báo cáo theo tháng
+Báo cáo theo nhân viên tư vấn
+Báo cáo theo người giới thiệu
+Báo cáo theo hạng bằng
+Mục đích:
+Giúp chủ trung tâm đánh giá hiệu quả kinh doanh
+Biết nguồn nào mang lại nhiều học viên và doanh thu hơn
+2.7. Bot thông báo
+
+Đây là tính năng rất hữu ích để giảm công việc thủ công.
+
+Bot có thể gửi thông báo cho:
+Học viên mới đăng ký
+Nhắc đi khám sức khỏe
+Nhắc nộp hồ sơ
+Nhắc đóng học phí
+Thông báo lịch học
+Thông báo lịch thi
+Thông báo kết quả thi
+Nhắc học viên thi lại
+Nhắc bổ sung hồ sơ còn thiếu
+Kênh thông báo có thể hỗ trợ:
+SMS
+Zalo
+Email
+Thông báo nội bộ trên hệ thống
+Lợi ích:
+Giảm quên việc
+Tăng tính chuyên nghiệp
+Hỗ trợ chăm sóc học viên tự động
+2.8. Cài đặt hệ thống
+
+Module cài đặt dùng để quản lý các thông tin cấu hình chung.
+
+Nội dung nên cài đặt:
+Danh mục hạng bằng
+Danh mục khu vực
+Danh mục trạng thái học viên
+Mẫu thông báo
+Cấu hình học phí theo từng hạng bằng
+Cấu hình quyền người dùng
+Cấu hình nguồn học viên / người giới thiệu
+Cấu hình lịch thi mặc định
+Mục đích:
+Giúp hệ thống linh hoạt
+Dễ mở rộng và chỉnh sửa mà không cần sửa code
+2.9. Quản lý tài khoản
+Loại tài khoản nên có:
+Quản trị viên
+Nhân viên tuyển sinh
+Kế toán
+Nhân viên chăm sóc học viên
+Quản lý trung tâm
+Chức năng:
+Tạo tài khoản
+Phân quyền
+Khóa / mở tài khoản
+Đổi mật khẩu
+Theo dõi lịch sử hoạt động
+Mục đích:
+Bảo mật dữ liệu
+Kiểm soát quyền truy cập rõ ràng
+3. Các tính năng nên bổ sung thêm
+
+Ngoài các tính năng bạn đã nêu, tôi đề xuất thêm các tính năng sau để hệ thống hoàn chỉnh hơn.
+
+3.1. Quản lý hồ sơ học viên
+Chức năng:
+Upload CCCD
+Upload giấy khám sức khỏe
+Upload ảnh thẻ
+Upload hồ sơ liên quan
+Kiểm tra hồ sơ còn thiếu hay đã đủ
+Lợi ích:
+Tránh thất lạc giấy tờ
+Dễ theo dõi học viên nào còn thiếu hồ sơ
+3.2. Quản lý nguồn học viên
+Chức năng:
+Ghi nhận học viên đến từ đâu:
+quảng cáo
+Facebook
+website
+giới thiệu
+nhân viên tư vấn
+Thống kê nguồn nào hiệu quả nhất
+Lợi ích:
+Tối ưu chi phí marketing
+Đánh giá đúng hiệu quả tuyển sinh
+3.3. Quản lý người giới thiệu và hoa hồng
+
+Vì bạn có trường “người giới thiệu”, nên nên tách thành một module riêng nếu dùng thường xuyên.
+
+Chức năng:
+Quản lý danh sách người giới thiệu
+Theo dõi số học viên do từng người giới thiệu mang về
+Tính thưởng / hoa hồng giới thiệu
+Báo cáo hiệu quả người giới thiệu
+Lợi ích:
+Kiểm soát tốt kênh cộng tác viên / giới thiệu
+3.4. Lịch sử chăm sóc học viên
+Chức năng:
+Lưu lại các lần gọi điện, nhắn tin, tư vấn
+Ghi chú nội dung trao đổi
+Đặt lịch nhắc liên hệ lại
+Lợi ích:
+Nhân viên không bỏ quên học viên
+Dễ bàn giao giữa các nhân sự
+3.5. Quản lý lớp học và lịch học
+Chức năng:
+Tạo lớp học
+Gán học viên vào lớp
+Theo dõi lịch học lý thuyết / thực hành
+Theo dõi sĩ số lớp
+Lợi ích:
+Quản lý tốt khâu đào tạo, không chỉ khâu tuyển sinh
+3.6. Quản lý kết quả thi
+Chức năng:
+Nhập kết quả từng đợt thi
+Xác định:
+đỗ
+trượt
+thi lại
+Theo dõi số lần thi của từng học viên
+Xuất danh sách kết quả
+Lợi ích:
+Đồng bộ rõ ràng giữa lịch thi và kết quả cuối cùng
+3.7. Nhắc việc nội bộ
+Chức năng:
+Nhắc nhân viên xử lý học viên chờ khám sức khỏe
+Nhắc học viên chưa nộp hồ sơ
+Nhắc học viên nợ học phí
+Nhắc học viên sắp thi
+Lợi ích:
+Tăng hiệu quả vận hành nội bộ
+3.8. Nhật ký hệ thống
+Chức năng:
+Lưu ai thêm học viên
+Ai sửa học phí
+Ai cập nhật trạng thái
+Ai xếp lịch thi
+Lợi ích:
+Dễ kiểm tra khi có sai sót
+Tăng tính minh bạch
+4. Gợi ý cấu trúc menu hệ thống
+
+Bạn có thể bố trí menu như sau:
+
+Tổng quan
+Học viên
+Tất cả
+Xe máy
+Ô tô
+Lịch thi
+Học phí
+Kết quả kinh doanh
+Bot thông báo
+Hồ sơ học viên
+Người giới thiệu
+Báo cáo
+Tài khoản
+Cài đặt
+5. Mẫu mô tả ngắn gọn để đưa vào tài liệu dự án
+
+Hệ thống quản lý học viên đăng ký học lái xe máy và ô tô là nền tảng website giúp trung tâm quản lý tập trung toàn bộ thông tin học viên từ lúc đăng ký, khám sức khỏe, nộp hồ sơ, học, thi, đến khi đỗ hoặc thi lại. Hệ thống hỗ trợ dashboard tổng quan, quản lý danh sách học viên, lịch thi, học phí, kết quả kinh doanh, bot thông báo tự động, quản lý tài khoản và cài đặt hệ thống. Ngoài ra, nền tảng còn có thể mở rộng thêm quản lý hồ sơ, nguồn học viên, người giới thiệu, lịch sử chăm sóc và báo cáo vận hành nhằm giúp trung tâm làm việc chuyên nghiệp, hạn chế sai sót và nâng cao hiệu quả tuyển sinh.
+
+6. Gợi ý trạng thái học viên chuẩn hóa
+
+Để hệ thống dễ quản lý, bạn nên chuẩn hóa trạng thái học viên như sau:
+
+Mới đăng ký
+Chờ khám sức khỏe
+Đã khám sức khỏe
+Chờ nộp hồ sơ
+Đã nộp hồ sơ
+Đang học
+Chờ thi
+Đã xếp lịch thi
+Đã đỗ
+Thi lại
+Tạm dừng
+Hủy
+Còn nợ học phí
+Hoàn tất
+7. Gợi ý thêm về giao diện tổng quan
+
+Ở trang tổng quan, nên chia thành 4 khu chính:
+
+Khối chỉ số nhanh
+Khối học viên cần xử lý
+Khối lịch thi sắp tới
+Khối báo cáo doanh thu và đăng ký gần đây
+
+Cách này giúp người quản lý mở hệ thống ra là nhìn thấy ngay việc cần xử lý.

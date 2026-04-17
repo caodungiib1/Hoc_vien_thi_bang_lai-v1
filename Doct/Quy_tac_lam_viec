@@ -1,0 +1,11 @@
+Quy tắc làm việc
+1. Duyệt kế hoạch trước khi code
+Trước mọi tác vụ có liên quan tới code, phải đưa ra kế hoạch làm việc để người dùng duyệt.
+Chỉ bắt đầu code sau khi người dùng đã đồng ý với kế hoạch đó.
+2. Luôn có checklist trong thư mục Doct
+Mỗi tác vụ phải có một file checklist riêng.
+File checklist phải được lưu trong thư mục Doct.
+Checklist cần phản ánh rõ các bước cần làm, trạng thái hoàn thành và mục kiểm tra lại nếu cần.
+3. Áp dụng
+Quy tắc này được áp dụng cho các tác vụ tiếp theo trong dự án.
+Khi có yêu cầu mới, ưu tiên tạo hoặc cập nhật checklist trước khi bắt đầu triển khai.
