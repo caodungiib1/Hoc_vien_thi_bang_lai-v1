@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
 import { forgotPassword, login, register } from '../services/authService';
 
-const LOGIN_FORM = {
-  email: 'admin@trungcau.vn',
-  password: 'admin123',
-  remember: true,
+const REMEMBER_EMAIL_KEY = 'qlhv.auth.remember.email';
+
+const getSavedEmail = () => {
+  try { return window.localStorage.getItem(REMEMBER_EMAIL_KEY) || ''; }
+  catch { return ''; }
+};
+
+const buildInitialLoginForm = () => {
+  const savedEmail = getSavedEmail();
+  return {
+    email: savedEmail,
+    password: '',
+    remember: Boolean(savedEmail),
+  };
 };
 
 const REGISTER_FORM = {
@@ -18,7 +28,7 @@ const REGISTER_FORM = {
 
 const Auth = ({ onAuthenticated }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [loginForm, setLoginForm] = useState(LOGIN_FORM);
+  const [loginForm, setLoginForm] = useState(buildInitialLoginForm);
   const [registerForm, setRegisterForm] = useState(REGISTER_FORM);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -31,7 +41,17 @@ const Auth = ({ onAuthenticated }) => {
   /* ── handlers ── */
   const handleLogin = async (e) => {
     e.preventDefault(); setError(''); setNotice(''); setIsSubmitting(true);
-    try { onAuthenticated(await login(loginForm)); }
+    try {
+      onAuthenticated(await login(loginForm));
+      // Ghi nhớ hoặc xóa email tùy theo checkbox
+      try {
+        if (loginForm.remember) {
+          window.localStorage.setItem(REMEMBER_EMAIL_KEY, loginForm.email);
+        } else {
+          window.localStorage.removeItem(REMEMBER_EMAIL_KEY);
+        }
+      } catch { /* bỏ qua nếu storage bị chặn */ }
+    }
     catch (err) { setError(err.message || 'Không thể đăng nhập.'); }
     finally { setIsSubmitting(false); }
   };
@@ -80,7 +100,7 @@ const Auth = ({ onAuthenticated }) => {
                 <label className="sp-label">
                   <span>Email</span>
                   <input type="email" className="sp-input" value={loginForm.email}
-                    onChange={(e) => setL('email', e.target.value)} placeholder="admin@trungcau.vn" />
+                    onChange={(e) => setL('email', e.target.value)} placeholder="Nhập địa chỉ email" />
                 </label>
                 <label className="sp-label">
                   <span>Mật khẩu</span>
