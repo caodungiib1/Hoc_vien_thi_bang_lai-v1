@@ -42,8 +42,10 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const [theme, setTheme] = useState(getInitialTheme);
-  const [currentUser, setCurrentUser] = useState(getCurrentUser);
   const isSystemBusinessesRoute = location.pathname === '/businesses' || location.pathname === '/businesses/';
+  // Không load user của tool chính khi đang ở cổng /businesses
+  const [currentUser, setCurrentUser] = useState(() => (isSystemBusinessesRoute ? null : getCurrentUser()));
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -52,6 +54,9 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
+    // Không sync user của tool chính khi đang ở cổng /businesses
+    if (isSystemBusinessesRoute) return;
+
     let mounted = true;
 
     syncCurrentUser()
@@ -67,7 +72,7 @@ function App() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [isSystemBusinessesRoute]);
 
   const handleLogout = async () => {
     await logout();

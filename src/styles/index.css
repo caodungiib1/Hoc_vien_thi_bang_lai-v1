@@ -4587,7 +4587,6 @@ a {
   position: relative;
   z-index: 30;
   overflow: visible;
-  isolation: isolate;
 }
 
 .system-shell-brand {
@@ -4698,7 +4697,6 @@ a {
 .system-shell-main {
   margin-top: 20px;
   position: relative;
-  z-index: 1;
 }
 
 @media (max-width: 1040px) {
