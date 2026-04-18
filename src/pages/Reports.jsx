@@ -5,6 +5,7 @@ import { getMockStudentProfileById } from '../data/mockStudentProfiles';
 import usePagination from '../hooks/usePagination';
 import { getAccounts } from '../services/adminService';
 import { exportXlsx } from '../services/exportService';
+import { buildPathForCurrentUser } from '../services/orgRouteService';
 import { getBusinessReport } from '../services/reportService';
 import { getStudentProfiles } from '../services/studentService';
 
@@ -517,7 +518,7 @@ const Reports = () => {
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
             {report.referrers.length} người giới thiệu
           </span>
-          <Link to="/referrers" className="secondary-button compact table-action-link">
+          <Link to={buildPathForCurrentUser('/referrers')} className="secondary-button compact table-action-link">
             Quản lý chi tiết
           </Link>
         </div>

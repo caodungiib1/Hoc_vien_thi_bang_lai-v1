@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PaginationControls from '../components/PaginationControls';
 import usePagination from '../hooks/usePagination';
+import { buildPathForCurrentUser } from '../services/orgRouteService';
 import {
   createExamBatch,
   getExamBatches,
@@ -656,7 +657,7 @@ const Exams = () => {
                             >
                               ↔ Chuyển
                             </button>
-                            <Link to={`/students/${student.id}`} className="secondary-button compact table-action-link" style={{ fontSize: '0.72rem', padding: '4px 8px' }}>
+                            <Link to={buildPathForCurrentUser(`/students/${student.id}`)} className="secondary-button compact table-action-link" style={{ fontSize: '0.72rem', padding: '4px 8px' }}>
                               Hồ sơ
                             </Link>
                           </div>
@@ -712,7 +713,7 @@ const Exams = () => {
                   <td>{student.expectedExam}</td>
                   <td>{student.consultant}</td>
                   <td>
-                    <Link to={`/students/${student.id}`} className="secondary-button compact table-action-link">Mở hồ sơ</Link>
+                    <Link to={buildPathForCurrentUser(`/students/${student.id}`)} className="secondary-button compact table-action-link">Mở hồ sơ</Link>
                   </td>
                 </tr>
               ))}

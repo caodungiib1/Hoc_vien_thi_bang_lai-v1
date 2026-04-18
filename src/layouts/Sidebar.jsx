@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { getStudents } from '../services/studentService';
 import { getDocumentRecords } from '../services/documentService';
 import { getTasks } from '../services/taskService';
+import { buildOrganizationPath, stripOrganizationPrefix } from '../services/orgRouteService';
 import { canAccessModule } from '../services/permissionService';
 
 const menuItems = [
@@ -76,6 +77,12 @@ const menuItems = [
     icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
   },
   {
+    moduleKey: 'businesses',
+    title: 'Doanh nghiệp',
+    path: '/businesses',
+    icon: 'M3 21h18M5 21V7l7-4 7 4v14M9 10h.01M9 14h.01M9 18h.01M15 10h.01M15 14h.01M15 18h.01',
+  },
+  {
     moduleKey: 'tasks',
     title: 'Nhắc việc',
     path: '/tasks',
@@ -86,7 +93,7 @@ const menuItems = [
 
 const Sidebar = ({ isCollapsed, currentUser }) => {
   const location = useLocation();
-  const currentPath = location.pathname;
+  const currentPath = stripOrganizationPrefix(location.pathname);
   const [badges, setBadges] = useState({
     students: 0,
     debtors: 0,
@@ -148,7 +155,11 @@ const Sidebar = ({ isCollapsed, currentUser }) => {
             const badgeCount = item.badgeKey ? badges[item.badgeKey] : 0;
 
             return (
-              <Link key={item.path} to={item.path} className={`menu-item ${isActive ? 'active' : ''}`}>
+              <Link
+                key={item.path}
+                to={buildOrganizationPath(currentUser, item.path)}
+                className={`menu-item ${isActive ? 'active' : ''}`}
+              >
                 <div className="menu-item-left">
                   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d={item.icon} />

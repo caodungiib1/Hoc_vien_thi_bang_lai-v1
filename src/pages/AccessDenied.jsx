@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { buildOrganizationPath } from '../services/orgRouteService';
 import {
   getDefaultPathForUser,
   getModuleDefinition,
@@ -8,7 +9,7 @@ import {
 
 const AccessDenied = ({ currentUser, moduleKey }) => {
   const navigate = useNavigate();
-  const fallbackPath = getDefaultPathForUser(currentUser);
+  const fallbackPath = buildOrganizationPath(currentUser, getDefaultPathForUser(currentUser));
   const moduleInfo = getModuleDefinition(moduleKey);
   const roleInfo = getRoleDefinition(currentUser?.role);
 

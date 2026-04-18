@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getStudents } from '../services/studentService';
 import { getExamBatches } from '../services/examService';
+import { buildPathForCurrentUser } from '../services/orgRouteService';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const count = (students, status) => students.filter((s) => s.status === status).length;
@@ -187,7 +188,7 @@ const Dashboard = () => {
               </svg>
               <span>Lịch thi sắp tới (7 ngày)</span>
             </div>
-            <Link to="/exams" className="secondary-button compact table-action-link">Xem tất cả</Link>
+            <Link to={buildPathForCurrentUser('/exams')} className="secondary-button compact table-action-link">Xem tất cả</Link>
           </div>
           <table className="lite-table">
             <thead>
@@ -232,7 +233,7 @@ const Dashboard = () => {
               </svg>
               <span>Đăng ký gần đây</span>
             </div>
-            <Link to="/students" className="secondary-button compact table-action-link">Xem tất cả</Link>
+            <Link to={buildPathForCurrentUser('/students')} className="secondary-button compact table-action-link">Xem tất cả</Link>
           </div>
           <table className="lite-table">
             <thead>
@@ -244,7 +245,7 @@ const Dashboard = () => {
               {recentStudents.map((s) => (
                 <tr key={s.id}>
                   <td>
-                    <Link to={`/students/${s.id}`} className="table-link" style={{ fontWeight: 600 }}>{s.name}</Link>
+                    <Link to={buildPathForCurrentUser(`/students/${s.id}`)} className="table-link" style={{ fontWeight: 600 }}>{s.name}</Link>
                   </td>
                   <td><span className="badge pu" style={{ fontWeight: 700, fontSize: '0.72rem' }}>{s.licenseType}</span></td>
                   <td style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{s.region}</td>
@@ -266,7 +267,7 @@ const Dashboard = () => {
               </svg>
               <span>Học viên còn nợ học phí</span>
             </div>
-            <Link to="/fees" className="secondary-button compact table-action-link">Xem tất cả</Link>
+            <Link to={buildPathForCurrentUser('/fees')} className="secondary-button compact table-action-link">Xem tất cả</Link>
           </div>
           <table className="lite-table">
             <thead>
@@ -280,7 +281,7 @@ const Dashboard = () => {
               ) : debtors.map((s) => (
                 <tr key={s.id}>
                   <td>
-                    <Link to={`/students/${s.id}`} className="table-link" style={{ fontWeight: 600 }}>{s.name}</Link>
+                    <Link to={buildPathForCurrentUser(`/students/${s.id}`)} className="table-link" style={{ fontWeight: 600 }}>{s.name}</Link>
                   </td>
                   <td><span className="badge pu" style={{ fontSize: '0.72rem' }}>{s.licenseType}</span></td>
                   <td style={{ color: '#ef4444', fontWeight: 700, fontSize: '0.8rem' }}>{s.debt}đ</td>
@@ -299,7 +300,7 @@ const Dashboard = () => {
               </svg>
               <span>Học viên còn thiếu hồ sơ</span>
             </div>
-            <Link to="/documents" className="secondary-button compact table-action-link">Xem tất cả</Link>
+            <Link to={buildPathForCurrentUser('/documents')} className="secondary-button compact table-action-link">Xem tất cả</Link>
           </div>
           <table className="lite-table">
             <thead>
@@ -313,12 +314,12 @@ const Dashboard = () => {
               ) : missingDocs.map((s) => (
                 <tr key={s.id}>
                   <td>
-                    <Link to={`/students/${s.id}`} className="table-link" style={{ fontWeight: 600 }}>{s.name}</Link>
+                    <Link to={buildPathForCurrentUser(`/students/${s.id}`)} className="table-link" style={{ fontWeight: 600 }}>{s.name}</Link>
                   </td>
                   <td><span className="badge pu" style={{ fontSize: '0.72rem' }}>{s.licenseType}</span></td>
                   <td><span className={`badge ${BADGE[s.status] || 'neutral'}`} style={{ fontSize: '0.72rem' }}>{s.status}</span></td>
                   <td>
-                    <Link to={`/students/${s.id}`} className="secondary-button compact table-action-link">Xử lý</Link>
+                    <Link to={buildPathForCurrentUser(`/students/${s.id}`)} className="secondary-button compact table-action-link">Xử lý</Link>
                   </td>
                 </tr>
               ))}
@@ -337,7 +338,7 @@ const Dashboard = () => {
               </svg>
               <span>Phân bố học viên theo hạng bằng</span>
             </div>
-            <Link to="/reports" className="secondary-button compact table-action-link">Xem báo cáo</Link>
+            <Link to={buildPathForCurrentUser('/reports')} className="secondary-button compact table-action-link">Xem báo cáo</Link>
           </div>
           <div style={{ padding: '8px 16px 16px' }}>
             <LicenseChart students={students} />

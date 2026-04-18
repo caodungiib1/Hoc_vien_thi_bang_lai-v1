@@ -4,6 +4,7 @@ import PaginationControls from '../components/PaginationControls';
 import usePagination from '../hooks/usePagination';
 import { createClass, getClasses, getClassSummary, resetClassesToDefault } from '../services/classService';
 import { exportCsv } from '../services/exportService';
+import { buildPathForCurrentUser } from '../services/orgRouteService';
 
 const LICENSE_FILTERS = ['Tất cả', 'A1', 'B1', 'B2', 'C'];
 const CLASS_STATUSES = [
@@ -517,7 +518,7 @@ const Classes = () => {
                       </td>
                       <td>{student.tuitionDebt}</td>
                       <td>
-                        <Link to={`/students/${student.id}`} className="secondary-button compact table-action-link">
+                        <Link to={buildPathForCurrentUser(`/students/${student.id}`)} className="secondary-button compact table-action-link">
                           Hồ sơ
                         </Link>
                       </td>

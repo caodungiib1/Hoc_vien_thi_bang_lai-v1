@@ -22,6 +22,8 @@ const mapBackendUser = (user) => ({
   role: user.role || 'Quản trị viên',
   status: user.status === 'active' ? 'active' : 'locked',
   centerName: user.centerName || '',
+  organizationId: user.organizationId || '',
+  organizationCode: user.organizationCode || '',
   created: user.createdAt
     ? new Date(user.createdAt).toLocaleDateString('vi-VN')
     : '—',

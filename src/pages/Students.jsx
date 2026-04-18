@@ -4,6 +4,7 @@ import PaginationControls from '../components/PaginationControls';
 import usePagination from '../hooks/usePagination';
 import { createStudent, getStudents } from '../services/studentService';
 import { exportXlsx } from '../services/exportService';
+import { buildPathForCurrentUser } from '../services/orgRouteService';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const LICENSE_TYPES = ['A1', 'A2', 'A3', 'A4', 'B1', 'B2', 'C', 'D', 'E', 'F'];
@@ -700,7 +701,7 @@ const Students = () => {
             ) : studentPagination.pageItems.map((s) => (
               <tr key={s.id}>
                 <td className="table-strong">
-                  <Link to={`/students/${s.id}`} className="table-link">{s.name}</Link>
+                  <Link to={buildPathForCurrentUser(`/students/${s.id}`)} className="table-link">{s.name}</Link>
                 </td>
                 <td>{s.phone}</td>
                 <td style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{s.cccd}</td>
@@ -713,7 +714,7 @@ const Students = () => {
                 </td>
                 <td><span className={`badge ${BADGE[s.status] || 'neutral'}`}>{s.status}</span></td>
                 <td>
-                  <Link to={`/students/${s.id}`} className="secondary-button compact table-action-link">
+                  <Link to={buildPathForCurrentUser(`/students/${s.id}`)} className="secondary-button compact table-action-link">
                     Xem chi tiết
                   </Link>
                 </td>

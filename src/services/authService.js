@@ -71,6 +71,12 @@ const writeLocalStorage = (key, value) => {
 
 const removeSessionStorage = (key) => removeBrowserStorage(getSessionStorage(), key);
 const removeLocalStorage = (key) => removeBrowserStorage(getLocalStorage(), key);
+const clearAuthStorage = () => {
+  removeLocalStorage(AUTH_USER_KEY);
+  removeLocalStorage(AUTH_TOKEN_KEY);
+  removeSessionStorage(AUTH_USER_KEY);
+  removeSessionStorage(AUTH_TOKEN_KEY);
+};
 
 const persistAuth = ({ user, token }, remember = true) => {
   if (remember) {
@@ -88,21 +94,59 @@ const persistAuth = ({ user, token }, remember = true) => {
   return user;
 };
 
+const persistCurrentUser = (user) => {
+  if (user?.isSystemAdmin === true) {
+    clearAuthStorage();
+    return null;
+  }
+
+  const hasLocalToken = Boolean(readLocalStorage(AUTH_TOKEN_KEY, ''));
+  const hasSessionToken = Boolean(readSessionStorage(AUTH_TOKEN_KEY, ''));
+
+  if (hasLocalToken) {
+    writeLocalStorage(AUTH_USER_KEY, user);
+    return user;
+  }
+
+  if (hasSessionToken) {
+    writeSessionStorage(AUTH_USER_KEY, user);
+  }
+
+  return user;
+};
+
 export const getAuthToken = () => (
   readLocalStorage(AUTH_TOKEN_KEY, '')
   || readSessionStorage(AUTH_TOKEN_KEY, '')
 );
 
-export const getCurrentUser = () => (
-  readLocalStorage(AUTH_USER_KEY, null)
-  || readSessionStorage(AUTH_USER_KEY, null)
-);
+export const getCurrentUser = () => {
+  const user = readLocalStorage(AUTH_USER_KEY, null)
+    || readSessionStorage(AUTH_USER_KEY, null);
+
+  if (user?.isSystemAdmin === true) {
+    clearAuthStorage();
+    return null;
+  }
+
+  return user;
+};
 
 export const login = async ({ email, password, remember = true }) => {
   const data = await apiRequest('/auth/login', {
     method: 'POST',
     body: { email, password, remember },
   });
+
+  if (data.user?.isSystemAdmin === true) {
+    await apiRequest('/auth/logout', {
+      method: 'POST',
+      token: data.token,
+    }).catch(() => null);
+
+    clearAuthStorage();
+    throw new Error('Tài khoản hệ thống vui lòng đăng nhập tại /businesses.');
+  }
 
   return persistAuth(data, remember);
 };
@@ -116,10 +160,38 @@ export const register = async ({ name, email, password, centerName }) => {
   return persistAuth(data, true);
 };
 
+export const syncCurrentUser = async () => {
+  const token = getAuthToken();
+  if (!token) return null;
+
+  const data = await apiRequest('/auth/me', { token });
+  return persistCurrentUser(data.user);
+};
+
 export const forgotPassword = async (email) => apiRequest('/auth/forgot-password', {
   method: 'POST',
   body: { email },
 });
+
+export const changePassword = async ({ currentPassword, nextPassword }) => {
+  const token = getAuthToken();
+
+  if (!token) {
+    throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+  }
+
+  const data = await apiRequest('/auth/change-password', {
+    method: 'POST',
+    token,
+    body: { currentPassword, nextPassword },
+  });
+
+  if (data.user) {
+    persistCurrentUser(data.user);
+  }
+
+  return data;
+};
 
 export const logout = async () => {
   const token = getAuthToken();
@@ -131,8 +203,5 @@ export const logout = async () => {
     }).catch(() => null);
   }
 
-  removeLocalStorage(AUTH_USER_KEY);
-  removeLocalStorage(AUTH_TOKEN_KEY);
-  removeSessionStorage(AUTH_USER_KEY);
-  removeSessionStorage(AUTH_TOKEN_KEY);
+  clearAuthStorage();
 };

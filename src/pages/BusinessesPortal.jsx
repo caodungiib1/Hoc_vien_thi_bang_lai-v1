@@ -1,51 +1,92 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { changePassword } from '../services/authService';
-import { stripOrganizationPrefix } from '../services/orgRouteService';
-import { getRoleDefinition } from '../services/permissionService';
+import Businesses from './Businesses';
+import {
+  changeSystemPassword,
+  getSystemCurrentUser,
+  loginSystemAdmin,
+  logoutSystemAdmin,
+  syncSystemCurrentUser,
+} from '../services/systemAuthService';
 
-const pageNames = {
-  '/': 'Tổng quan',
-  '/students': 'Học viên',
-  '/classes': 'Lớp học',
-  '/exams': 'Lịch thi',
-  '/fees': 'Học phí',
-  '/documents': 'Hồ sơ học viên',
-  '/referrers': 'Người giới thiệu',
-  '/reports': 'Kết quả KD',
-  '/notifications': 'BOT thông báo',
-  '/settings': 'Cài đặt',
-  '/admin': 'Admin',
-  '/businesses': 'Doanh nghiệp',
-  '/tasks': 'Nhắc việc',
+const INITIAL_FORM = {
+  account: 'admin',
+  password: 'admin',
 };
 
-const Header = ({
-  theme,
-  onThemeChange,
-  isSidebarCollapsed,
-  onMenuToggle,
-  currentUser,
-  onLogout,
-}) => {
-  const location = useLocation();
-  const navigate = useNavigate();
+const BusinessesLogin = ({ onAuthenticated }) => {
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const updateField = (key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const user = await loginSystemAdmin(form);
+      onAuthenticated(user);
+    } catch (submitError) {
+      setError(submitError.message || 'Không thể đăng nhập cổng quản trị hệ thống.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="system-auth-shell">
+      <div className="system-auth-card">
+        <div className="system-auth-card-head">
+          <span className="system-auth-badge">Đăng nhập riêng</span>
+          <h2>Đăng nhập cổng Businesses</h2>
+          <p>Sử dụng tài khoản hệ thống để truy cập khu quản trị doanh nghiệp.</p>
+        </div>
+
+        {error && <div className="system-auth-error">{error}</div>}
+
+        <form className="system-auth-form" onSubmit={handleSubmit}>
+          <label className="system-auth-field">
+            <span>Tài khoản</span>
+            <input
+              type="text"
+              value={form.account}
+              onChange={(event) => updateField('account', event.target.value)}
+              placeholder="Nhập tài khoản hệ thống"
+            />
+          </label>
+
+          <label className="system-auth-field">
+            <span>Mật khẩu</span>
+            <input
+              type="password"
+              value={form.password}
+              onChange={(event) => updateField('password', event.target.value)}
+              placeholder="Nhập mật khẩu"
+            />
+          </label>
+
+          <button type="submit" className="system-auth-submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const BusinessesShell = ({ currentUser, onLogout }) => {
+  const avatarLetter = currentUser?.name?.charAt(0)?.toUpperCase() || 'A';
+  const roleLabel = 'System admin';
+  const profileRef = useRef(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeAccountModal, setActiveAccountModal] = useState(null);
   const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
   const [passwordMessage, setPasswordMessage] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const profileRef = useRef(null);
-
-  const currentPath = stripOrganizationPrefix(location.pathname);
-  const pageName = currentPath.startsWith('/students/')
-    ? 'Chi tiết học viên'
-    : pageNames[currentPath] || 'Tổng quan';
-
-  const user = currentUser || { name: 'Quản trị viên', role: 'Quản trị viên' };
-  const roleInfo = getRoleDefinition(user.role);
-  const roleLabel = user.isSystemAdmin ? 'System admin' : roleInfo.label;
-  const avatarLetter = user.name ? user.name.charAt(0).toUpperCase() : 'Q';
 
   const openAccountModal = (modalName) => {
     setIsProfileOpen(false);
@@ -82,7 +123,7 @@ const Header = ({
     setPasswordMessage('');
 
     try {
-      const response = await changePassword({
+      const response = await changeSystemPassword({
         currentPassword: passwordForm.current,
         nextPassword: passwordForm.next,
       });
@@ -109,58 +150,26 @@ const Header = ({
 
   return (
     <>
-      <div className="header">
-        <div className="header-left">
-          <button
-            type="button"
-            className="icon-button header-nav-button"
-            aria-label={isSidebarCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
-            onClick={onMenuToggle}
-          >
-            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-
-          <div className="header-breadcrumb">
-            <span className="header-breadcrumb-label">{pageName}</span>
-          </div>
-        </div>
-
-        <div className="header-actions">
-          <div className="theme-switch" role="group" aria-label="Chuyển giao diện">
-            <button
-              type="button"
-              className={`theme-option ${theme === 'light' ? 'active' : ''}`}
-              onClick={() => onThemeChange('light')}
-              aria-pressed={theme === 'light'}
-            >
-              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="8" cy="8" r="3" />
-                <path strokeLinecap="round" d="M8 1.5v1.5M8 13v1.5M12.95 3.05l-1.06 1.06M4.11 11.89l-1.06 1.06M14.5 8h-1.5M3 8H1.5M12.95 12.95l-1.06-1.06M4.11 4.11L3.05 3.05" />
+      <div className="system-shell">
+        <header className="system-shell-header">
+          <div className="system-shell-brand">
+            <div className="system-shell-logo">
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 10h.01M9 14h.01M9 18h.01M15 10h.01M15 14h.01M15 18h.01" />
               </svg>
-              <span>Sáng</span>
-            </button>
-
-            <button
-              type="button"
-              className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
-              onClick={() => onThemeChange('dark')}
-              aria-pressed={theme === 'dark'}
-            >
-              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.5a6.5 6.5 0 108.5 8.5A7 7 0 0112 3.5z" />
-              </svg>
-              <span>Tối</span>
-            </button>
+            </div>
+            <div>
+              <strong>QLHV System</strong>
+              <span>Cổng quản trị doanh nghiệp</span>
+            </div>
           </div>
 
           <div className="header-profile-wrapper" ref={profileRef}>
             <button className="header-profile-btn" onClick={() => setIsProfileOpen((prev) => !prev)}>
               <div className="hp-avatar">{avatarLetter}</div>
               <div className="hp-info">
-                <span className="hp-name">{user.name}</span>
-                <span className="hp-role">{roleLabel}</span>
+                <span className="hp-name">{currentUser?.name || 'System Admin'}</span>
+                <span className="hp-role">{currentUser?.email || 'admin'}</span>
               </div>
             </button>
 
@@ -183,8 +192,7 @@ const Header = ({
                   className="hp-dropdown-item hp-dropdown-item--danger"
                   onClick={() => {
                     setIsProfileOpen(false);
-                    if (onLogout) onLogout();
-                    else navigate('/auth');
+                    onLogout();
                   }}
                 >
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -195,7 +203,11 @@ const Header = ({
               </div>
             )}
           </div>
-        </div>
+        </header>
+
+        <main className="system-shell-main">
+          <Businesses />
+        </main>
       </div>
 
       {activeAccountModal && (
@@ -217,23 +229,23 @@ const Header = ({
                 <div className="account-profile-grid">
                   <div>
                     <span>Họ và tên</span>
-                    <strong>{user.name}</strong>
+                    <strong>{currentUser?.name || 'System Admin'}</strong>
                   </div>
                   <div>
-                    <span>Email</span>
-                    <strong>{user.email || 'Chưa cập nhật'}</strong>
+                    <span>Email / tài khoản</span>
+                    <strong>{currentUser?.email || 'admin'}</strong>
                   </div>
                   <div>
                     <span>Vai trò</span>
                     <strong>{roleLabel}</strong>
                   </div>
                   <div>
-                    <span>Trung tâm</span>
-                    <strong>{user.centerName || 'Chưa cập nhật'}</strong>
+                    <span>Khu vực</span>
+                    <strong>{currentUser?.centerName || 'Hệ thống'}</strong>
                   </div>
                   <div>
-                    <span>Mã doanh nghiệp</span>
-                    <strong>{user.organizationCode || 'Chưa cấp'}</strong>
+                    <span>Cổng truy cập</span>
+                    <strong>/businesses</strong>
                   </div>
                 </div>
               </div>
@@ -282,4 +294,52 @@ const Header = ({
   );
 };
 
-export default Header;
+const BusinessesPortal = () => {
+  const [currentUser, setCurrentUser] = useState(getSystemCurrentUser);
+  const [isSyncing, setIsSyncing] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    syncSystemCurrentUser()
+      .then((user) => {
+        if (!mounted) return;
+        setCurrentUser(user);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setCurrentUser(null);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setIsSyncing(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await logoutSystemAdmin();
+    setCurrentUser(null);
+  };
+
+  if (isSyncing) {
+    return (
+      <div className="system-portal">
+        <div className="system-portal-loading">Đang kiểm tra phiên quản trị hệ thống...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="system-portal">
+      {currentUser?.isSystemAdmin
+        ? <BusinessesShell currentUser={currentUser} onLogout={handleLogout} />
+        : <BusinessesLogin onAuthenticated={setCurrentUser} />}
+    </div>
+  );
+};
+
+export default BusinessesPortal;

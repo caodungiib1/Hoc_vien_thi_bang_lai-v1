@@ -5,6 +5,7 @@ import usePagination from '../hooks/usePagination';
 import { collectFee, getFeeOverview, getFeeRecords, getPaymentHistory } from '../services/feeService';
 import { getStudents } from '../services/studentService';
 import { exportXlsx } from '../services/exportService';
+import { buildPathForCurrentUser } from '../services/orgRouteService';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n) => new Intl.NumberFormat('vi-VN').format(n) + 'đ';
@@ -454,7 +455,7 @@ const Fees = () => {
                 return (
                   <tr key={r.id} style={isOverdue ? { backgroundColor: 'rgba(239,68,68,0.03)' } : {}}>
                     <td>
-                      <Link to={`/students/${r.studentId}?tab=fees`} className="table-link table-title">
+                      <Link to={buildPathForCurrentUser(`/students/${r.studentId}?tab=fees`)} className="table-link table-title">
                         {r.name}
                       </Link>
                     </td>
@@ -509,7 +510,7 @@ const Fees = () => {
                 <tr key={p.id}>
                   <td style={{ whiteSpace: 'nowrap' }}>{p.date}</td>
                   <td>
-                    <Link to={`/students/${p.studentId}?tab=fees`} className="table-link table-title">
+                    <Link to={buildPathForCurrentUser(`/students/${p.studentId}?tab=fees`)} className="table-link table-title">
                       {p.studentName}
                     </Link>
                   </td>

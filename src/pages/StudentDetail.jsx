@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { buildPathForCurrentUser } from '../services/orgRouteService';
 import {
   getDocumentRecordByStudentId,
   getDocumentTypes,
@@ -610,7 +611,7 @@ const StudentDetail = () => {
     return (
       <div className="table-card detail-card">
         <div className="page-title-block">
-          <Link to="/students" className="back-link"><span>←</span><span>Quay lại danh sách học viên</span></Link>
+          <Link to={buildPathForCurrentUser('/students')} className="back-link"><span>←</span><span>Quay lại danh sách học viên</span></Link>
           <h1 className="page-title">Đang tải hồ sơ học viên</h1>
           <span className="page-subtitle">Hệ thống đang lấy dữ liệu chi tiết...</span>
         </div>
@@ -622,7 +623,7 @@ const StudentDetail = () => {
     return (
       <div className="table-card detail-card">
         <div className="page-title-block">
-          <Link to="/students" className="back-link"><span>←</span><span>Quay lại danh sách học viên</span></Link>
+          <Link to={buildPathForCurrentUser('/students')} className="back-link"><span>←</span><span>Quay lại danh sách học viên</span></Link>
           <h1 className="page-title">Không tìm thấy học viên</h1>
           <span className="page-subtitle">Mã học viên bạn truy cập không tồn tại trong dữ liệu hiện tại.</span>
         </div>
@@ -667,7 +668,7 @@ const StudentDetail = () => {
       <section className="detail-hero-card">
       <div className="page-header detail-hero-top">
         <div className="page-title-block detail-hero-main">
-          <Link to="/students" className="back-link"><span>←</span><span>Quay lại danh sách học viên</span></Link>
+          <Link to={buildPathForCurrentUser('/students')} className="back-link"><span>←</span><span>Quay lại danh sách học viên</span></Link>
           <h1 className="page-title">{editMode ? editForm.name || student.name : student.name}</h1>
           <span className="page-subtitle">
             {student.packageName} • Nhân viên phụ trách: {student.consultant}
@@ -798,8 +799,8 @@ const StudentDetail = () => {
               <div className="detail-card-header">
                 <div className="detail-card-title">Lịch học và lịch thi</div>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <Link to="/classes" className="secondary-button compact table-action-link">Mở lớp học</Link>
-                  <Link to="/exams" className="secondary-button compact table-action-link">Mở lịch thi</Link>
+                  <Link to={buildPathForCurrentUser('/classes')} className="secondary-button compact table-action-link">Mở lớp học</Link>
+                  <Link to={buildPathForCurrentUser('/exams')} className="secondary-button compact table-action-link">Mở lịch thi</Link>
                 </div>
               </div>
               <div className="detail-list">

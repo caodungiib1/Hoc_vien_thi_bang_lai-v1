@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { buildPathForCurrentUser } from '../services/orgRouteService';
 
 const NotFound = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ const NotFound = () => {
         >
           ← Quay lại
         </button>
-        <Link to="/" className="btn-primary" style={{ textDecoration: 'none' }}>
+        <Link to={buildPathForCurrentUser('/')} className="btn-primary" style={{ textDecoration: 'none' }}>
           🏠 Về trang chủ
         </Link>
       </div>
@@ -71,7 +72,7 @@ const NotFound = () => {
           { to: '/notifications',label: 'Thông báo' },
         ].map((link) => (
           <Link
-            key={link.to} to={link.to}
+            key={link.to} to={buildPathForCurrentUser(link.to)}
             style={{
               fontSize: '0.8rem', color: 'var(--accent-primary)',
               textDecoration: 'none', padding: '4px 10px',

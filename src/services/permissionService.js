@@ -18,6 +18,7 @@ export const MODULE_DEFINITIONS = [
   { key: 'notifications', label: 'BOT thông báo', title: 'BOT thông báo', path: '/notifications' },
   { key: 'settings', label: 'Cài đặt', title: 'Cài đặt', path: '/settings' },
   { key: 'admin', label: 'Quản lý TK', title: 'Admin', path: '/admin' },
+  { key: 'businesses', label: 'Doanh nghiệp', title: 'Doanh nghiệp', path: '/businesses', showInMatrix: false, systemOnly: true },
   { key: 'tasks', label: 'Nhắc việc', title: 'Nhắc việc', path: '/tasks' },
 ];
 
@@ -132,6 +133,10 @@ export const getModuleDefinition = (moduleKey) => (
 );
 
 export const canAccessModule = (userOrRole, moduleKey) => {
+  if (moduleKey === 'businesses') {
+    return typeof userOrRole === 'object' && userOrRole?.isSystemAdmin === true;
+  }
+
   const role = typeof userOrRole === 'string' ? userOrRole : userOrRole?.role;
   const roleId = normalizeRoleId(role);
   return Boolean(MODULE_PERMISSIONS[roleId]?.[moduleKey]);
@@ -143,11 +148,15 @@ export const getDefaultPathForUser = (userOrRole) => {
 };
 
 export const getPermissionMatrixData = () => ({
-  modules: MODULE_DEFINITIONS.map((item) => item.label),
+  modules: MODULE_DEFINITIONS
+    .filter((item) => item.showInMatrix !== false)
+    .map((item) => item.label),
   permissions: Object.fromEntries(
     ROLE_DEFINITIONS.map((role) => [
       role.id,
-      MODULE_DEFINITIONS.map((module) => Boolean(MODULE_PERMISSIONS[role.id]?.[module.key])),
+      MODULE_DEFINITIONS
+        .filter((item) => item.showInMatrix !== false)
+        .map((module) => Boolean(MODULE_PERMISSIONS[role.id]?.[module.key])),
     ]),
   ),
 });

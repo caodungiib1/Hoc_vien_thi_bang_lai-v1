@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PaginationControls from '../components/PaginationControls';
 import usePagination from '../hooks/usePagination';
 import { exportCsv } from '../services/exportService';
+import { buildPathForCurrentUser } from '../services/orgRouteService';
 import {
   getDocumentRecords,
   getDocumentSummary,
@@ -583,7 +584,7 @@ const Documents = () => {
               {documentPagination.pageItems.map((record) => (
                 <tr key={record.id}>
                   <td>
-                    <Link to={`/students/${record.studentId}?tab=documents`} className="table-link table-title">
+                    <Link to={buildPathForCurrentUser(`/students/${record.studentId}?tab=documents`)} className="table-link table-title">
                       {record.name}
                     </Link>
                     <div className="detail-list-meta">{record.phone} • {record.region}</div>

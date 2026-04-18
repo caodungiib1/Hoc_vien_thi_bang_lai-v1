@@ -1,6 +1,11 @@
 import express from 'express';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { ensureDatabase, readDatabase, writeDatabase } from './database.js';
+import {
+  ensureDatabase,
+  generateOrganizationCode,
+  readDatabase,
+  writeDatabase,
+} from './database.js';
 import { hashPassword, verifyPassword } from './password.js';
 
 const app = express();
@@ -9,6 +14,8 @@ const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 // Cho phép mọi localhost port trong môi trường dev (5173, 5174, 5175...)
 const LOCALHOST_REGEX = /^http:\/\/localhost:\d+$/;
 const SESSION_KEY = 'qlhv-auth-session';
+const ORGANIZATION_ACTIVE_WINDOW_MINUTES = 15;
+const ORGANIZATION_ACTIVE_WINDOW_MS = ORGANIZATION_ACTIVE_WINDOW_MINUTES * 60 * 1000;
 
 ensureDatabase();
 
@@ -23,6 +30,16 @@ const now = () => new Date().toISOString();
 const addHours = (hours) => new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
 const addDays = (days) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 const hashToken = (token) => createHash('sha256').update(token).digest('hex');
+const getUsedOrganizationCodes = (database) => new Set(
+  (database.users || [])
+    .map((user) => String(user.organizationCode || '').trim())
+    .filter(Boolean),
+);
+const toTimestamp = (value) => {
+  const timestamp = new Date(value || '').getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+};
+const toIsoString = (timestamp) => (timestamp > 0 ? new Date(timestamp).toISOString() : '');
 
 const getRoleId = (role = '') => {
   const normalizedRole = normalizeRoleText(role);
@@ -42,10 +59,14 @@ const sanitizeUser = (user) => ({
   email: user.email,
   role: user.role,
   centerName: user.centerName,
-  // organizationId dùng để phân tách dữ liệu — mỗi user đăng ký = 1 tổ chức riêng.
+  // organizationId là khóa nội bộ để phân tách dữ liệu theo doanh nghiệp.
   organizationId: user.organizationId || user.id,
+  // organizationCode là mã doanh nghiệp dùng trên URL.
+  organizationCode: user.organizationCode || '',
+  isSystemAdmin: user.isSystemAdmin === true,
   status: user.status,
   createdAt: user.createdAt,
+  lastLoginAt: user.lastLoginAt || '',
   updatedAt: user.updatedAt,
 });
 
@@ -126,6 +147,120 @@ const requireRoles = (...allowedRoles) => (req, res, next) => {
   next();
 };
 
+const requireSystemAdmin = (req, res, next) => {
+  if (req.auth?.user?.isSystemAdmin !== true) {
+    sendError(res, 403, 'Chức năng này chỉ dành cho quản trị hệ thống.');
+    return;
+  }
+
+  next();
+};
+
+const buildOrganizationSummaries = (database) => {
+  const users = Array.isArray(database.users)
+    ? database.users.filter((user) => user.isSystemAdmin !== true)
+    : [];
+  const sessions = Array.isArray(database.sessions) ? database.sessions : [];
+  const nowMs = Date.now();
+  const orgMap = new Map();
+
+  users.forEach((user) => {
+    const organizationId = user.organizationId || user.id;
+
+    if (!orgMap.has(organizationId)) {
+      orgMap.set(organizationId, {
+        organizationId,
+        organizationCode: user.organizationCode || '',
+        centerName: user.centerName || 'Chưa cập nhật',
+        totalAccounts: 0,
+        activeAccounts: 0,
+        lockedAccounts: 0,
+        roleCounts: { admin: 0, manager: 0, sales: 0, acct: 0, care: 0 },
+        users: [],
+        userIds: new Set(),
+      });
+    }
+
+    const org = orgMap.get(organizationId);
+    const roleId = getRoleId(user.role);
+
+    org.organizationCode = org.organizationCode || user.organizationCode || '';
+    org.centerName = org.centerName === 'Chưa cập nhật' && user.centerName
+      ? user.centerName
+      : org.centerName;
+    org.totalAccounts += 1;
+    org.activeAccounts += user.status === 'active' ? 1 : 0;
+    org.lockedAccounts += user.status === 'locked' ? 1 : 0;
+
+    if (Object.hasOwn(org.roleCounts, roleId)) {
+      org.roleCounts[roleId] += 1;
+    }
+
+    org.userIds.add(user.id);
+    org.users.push({
+      ...sanitizeUser(user),
+      lastActiveAt: user.lastLoginAt || '',
+    });
+  });
+
+  return Array.from(orgMap.values()).map((org) => {
+    const orgSessions = sessions.filter((session) => org.userIds.has(session.userId));
+    const activeSessions = orgSessions.filter((session) => toTimestamp(session.expiresAt) > nowMs);
+    const latestSeenAtMs = orgSessions.reduce(
+      (latest, session) => Math.max(latest, toTimestamp(session.lastSeenAt || session.createdAt)),
+      0,
+    );
+    const latestLoginAtMs = org.users.reduce(
+      (latest, user) => Math.max(latest, toTimestamp(user.lastLoginAt)),
+      0,
+    );
+    const lastActivityAtMs = Math.max(latestSeenAtMs, latestLoginAtMs);
+    const isOnline = activeSessions.some((session) => (
+      toTimestamp(session.lastSeenAt || session.createdAt) >= nowMs - ORGANIZATION_ACTIVE_WINDOW_MS
+    ));
+    const primaryAdmin = org.users.find((user) => getRoleId(user.role) === 'admin') || org.users[0] || null;
+
+    return {
+      organizationId: org.organizationId,
+      organizationCode: org.organizationCode,
+      centerName: org.centerName,
+      totalAccounts: org.totalAccounts,
+      activeAccounts: org.activeAccounts,
+      lockedAccounts: org.lockedAccounts,
+      primaryAdmin: primaryAdmin ? {
+        id: primaryAdmin.id,
+        name: primaryAdmin.name,
+        email: primaryAdmin.email,
+      } : null,
+      roleCounts: org.roleCounts,
+      status: isOnline ? 'active' : (lastActivityAtMs > 0 ? 'offline' : 'idle'),
+      statusLabel: isOnline ? 'Hoạt động' : (lastActivityAtMs > 0 ? 'Offline' : 'Chưa hoạt động'),
+      lastActivityAt: toIsoString(lastActivityAtMs),
+      offlineSinceAt: !isOnline && lastActivityAtMs > 0 ? toIsoString(lastActivityAtMs) : '',
+      accounts: org.users
+        .map((user) => ({
+          ...user,
+          statusLabel: user.status === 'active' ? 'Hoạt động' : 'Đã khóa',
+        }))
+        .sort((left, right) => {
+          const roleDiff = (getRoleId(left.role) === 'admin' ? 0 : 1) - (getRoleId(right.role) === 'admin' ? 0 : 1);
+          if (roleDiff !== 0) return roleDiff;
+          return left.name.localeCompare(right.name, 'vi');
+        }),
+    };
+  }).sort((left, right) => {
+    if (left.status !== right.status) {
+      const priority = { active: 0, offline: 1, idle: 2 };
+      return priority[left.status] - priority[right.status];
+    }
+
+    const activityDiff = toTimestamp(right.lastActivityAt) - toTimestamp(left.lastActivityAt);
+    if (activityDiff !== 0) return activityDiff;
+
+    return String(left.organizationCode).localeCompare(String(right.organizationCode), 'vi');
+  });
+};
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   // Trong dev: cho phép mọi localhost port. Trong production: dùng CLIENT_ORIGIN cụ thể.
@@ -193,6 +328,46 @@ app.post('/api/auth/login', (req, res) => {
   });
 });
 
+app.post('/api/auth/system/login', (req, res) => {
+  const { account, email, password, remember = true } = req.body || {};
+  const normalizedAccount = normalizeEmail(account || email);
+
+  if (!normalizedAccount || !password) {
+    sendError(res, 400, 'Vui lòng nhập tài khoản và mật khẩu.');
+    return;
+  }
+
+  const database = readDatabase();
+  const user = database.users.find((item) => normalizeEmail(item.email) === normalizedAccount);
+
+  if (!user || !verifyPassword(password, user.passwordHash)) {
+    sendError(res, 401, 'Tài khoản hoặc mật khẩu chưa đúng.');
+    return;
+  }
+
+  if (user.status !== 'active') {
+    sendError(res, 403, 'Tài khoản đang bị khóa. Vui lòng liên hệ quản trị viên.');
+    return;
+  }
+
+  if (user.isSystemAdmin !== true) {
+    sendError(res, 403, 'Tài khoản này không có quyền truy cập cổng quản trị hệ thống.');
+    return;
+  }
+
+  const { token, session } = createSession(database, user, remember);
+  user.lastLoginAt = now();
+  user.updatedAt = now();
+  writeDatabase(database);
+
+  res.json({
+    user: sanitizeUser(user),
+    token,
+    remember: session.remember,
+    expiresAt: session.expiresAt,
+  });
+});
+
 app.post('/api/auth/register', (req, res) => {
   const { name, email, password, centerName, remember = true } = req.body || {};
   const normalizedEmail = normalizeEmail(email);
@@ -221,6 +396,8 @@ app.post('/api/auth/register', (req, res) => {
   }
 
   const userId = randomUUID();
+  const organizationId = randomUUID();
+  const organizationCode = generateOrganizationCode(getUsedOrganizationCodes(database));
   const user = {
     id: userId,
     name: name.trim(),
@@ -228,9 +405,9 @@ app.post('/api/auth/register', (req, res) => {
     passwordHash: hashPassword(password),
     role: 'Quản trị viên',
     centerName: centerName?.trim() || 'Trung tâm lái xe',
-    // Mỗi người đăng ký tạo ra 1 tổ chức (organization) độc lập.
-    // organizationId = id của chính user → họ là chủ tổ chức đó.
-    organizationId: userId,
+    // Mỗi người đăng ký tạo ra một doanh nghiệp độc lập.
+    organizationId,
+    organizationCode,
     status: 'active',
     createdAt: now(),
     updatedAt: now(),
@@ -278,6 +455,47 @@ app.post('/api/auth/forgot-password', (req, res) => {
   });
 });
 
+app.post('/api/auth/change-password', requireAuth, (req, res) => {
+  const { currentPassword, nextPassword } = req.body || {};
+
+  if (!currentPassword || !nextPassword) {
+    sendError(res, 400, 'Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.');
+    return;
+  }
+
+  if (!verifyPassword(currentPassword, req.auth.user.passwordHash)) {
+    sendError(res, 400, 'Mật khẩu hiện tại chưa đúng.');
+    return;
+  }
+
+  if (nextPassword.length < 6) {
+    sendError(res, 400, 'Mật khẩu mới cần có ít nhất 6 ký tự.');
+    return;
+  }
+
+  if (currentPassword === nextPassword) {
+    sendError(res, 400, 'Mật khẩu mới cần khác mật khẩu hiện tại.');
+    return;
+  }
+
+  const database = readDatabase();
+  const user = database.users.find((item) => item.id === req.auth.user.id);
+
+  if (!user) {
+    sendError(res, 404, 'Không tìm thấy tài khoản.');
+    return;
+  }
+
+  user.passwordHash = hashPassword(nextPassword);
+  user.updatedAt = now();
+  writeDatabase(database);
+
+  res.json({
+    message: 'Đổi mật khẩu thành công.',
+    user: sanitizeUser(user),
+  });
+});
+
 app.get('/api/users', requireAuth, requireRoles('admin'), (req, res) => {
   const database = readDatabase();
   const currentOrgId = req.auth.user.organizationId || req.auth.user.id;
@@ -286,6 +504,14 @@ app.get('/api/users', requireAuth, requireRoles('admin'), (req, res) => {
     .filter((u) => (u.organizationId || u.id) === currentOrgId)
     .map(sanitizeUser);
   res.json({ users });
+});
+
+app.get('/api/system/organizations', requireAuth, requireSystemAdmin, (req, res) => {
+  const database = readDatabase();
+  res.json({
+    organizations: buildOrganizationSummaries(database),
+    activeWindowMinutes: ORGANIZATION_ACTIVE_WINDOW_MINUTES,
+  });
 });
 
 // Admin tạo tài khoản nhân viên mới trong cùng tổ chức.
@@ -298,7 +524,7 @@ app.post('/api/users', requireAuth, requireRoles('admin'), (req, res) => {
     return;
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(email);
   const database = readDatabase();
   const existingUser = database.users.find((u) => (u.email || '').trim().toLowerCase() === normalizedEmail);
 
@@ -316,8 +542,9 @@ app.post('/api/users', requireAuth, requireRoles('admin'), (req, res) => {
     passwordHash: hashPassword(password),
     role: role || 'Nhân viên',
     centerName: centerName?.trim() || req.auth.user.centerName || '',
-    // Dùng cùng organizationId → thuộc cùng tổ chức với admin tạo.
+    // Dùng cùng organizationId và organizationCode → thuộc cùng doanh nghiệp với admin tạo.
     organizationId: currentOrgId,
+    organizationCode: req.auth.user.organizationCode || '',
     status: 'active',
     createdAt: now(),
     updatedAt: now(),
